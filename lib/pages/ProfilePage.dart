@@ -1,8 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:strong_chat/chat/StorageService.dart';
 import '../auth/AuthService.dart';
 import '../auth/LoginPage.dart';
 import '../chat/FireStoreService.dart';
+import 'dart:async';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -16,6 +18,7 @@ class _ProfilePageState extends State<ProfilePage> {
   String? _avatarUrl;
   String _userName = 'User Name';
   String _userEmail = 'user@example.com';
+  bool _isForgotPasswordButtonEnabled = true;
 
   @override
   void initState() {
@@ -24,7 +27,6 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _loadUserData() async {
-    showLoadingDialog(context);
     final String userId = _authService.getCurrentUserId();
     final userInfo = await _fireStoreService.getUserInfo(userId);
 
@@ -36,23 +38,64 @@ class _ProfilePageState extends State<ProfilePage> {
       });
     }
 
-    Navigator.of(context).pop();
   }
-
 
   void _logout(BuildContext context) async {
-    await _authService.signout();
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => LoginPage()),
-          (route) => false,
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Confirm Logout'),
+          content: Text('Are you sure you want to log out?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text('Logout'),
+            ),
+          ],
+        );
+      },
     );
+
+    if (shouldLogout == true) {
+      await _authService.signout();
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => LoginPage()),
+            (route) => false,
+      );
+    }
   }
+
 
   void _forgotPassword(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Password reset link has been sent to your email')),
     );
+
+    try {
+       FirebaseAuth.instance.sendPasswordResetEmail(
+        email: _userEmail,
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
+    }
+
+    setState(() {
+      _isForgotPasswordButtonEnabled = false;
+    });
+
+    Timer(Duration(seconds: 5), () {
+      setState(() {
+        _isForgotPasswordButtonEnabled = true;
+      });
+    });
   }
 
   void _changePassword(BuildContext context) {
@@ -78,18 +121,46 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void _editProfilePicture() async {
     showLoadingDialog(context);
-    await storageService.uploadImage(_authService.getCurrentUserId());
-    Navigator.of(context).pop(); // Close the loading dialog
+    await storageService.uploadImage(_authService.getCurrentUserId(), 'avatars');
+    Navigator.of(context).pop();
     _loadUserData();
     setState(() {});
   }
 
+  void _editName() async {
+    final TextEditingController nameController = TextEditingController(text: _userName);
 
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Edit Name'),
+          content: TextField(
+            controller: nameController,
+            decoration: InputDecoration(labelText: 'Enter new name'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(null),
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(nameController.text.trim()),
+              child: Text('Confirm'),
+            ),
+          ],
+        );
+      },
+    );
 
-  void _editName() {
-    // Add logic to edit name
-    print("Edit Name tapped");
+    if (newName != null && newName.isNotEmpty && newName != _userName) {
+      setState(() {
+        _userName = newName;
+      });
+      await _fireStoreService.updateUserName(_authService.getCurrentUserId(), newName);
+    }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +177,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     radius: 50,
                     backgroundImage: _avatarUrl != null
                         ? NetworkImage(_avatarUrl!)
-                        : AssetImage('assets/avatar_placeholder.png') as ImageProvider,
+                        : null,
                   ),
                   Positioned(
                     bottom: 0,
@@ -145,16 +216,12 @@ class _ProfilePageState extends State<ProfilePage> {
               SizedBox(height: 30),
               ElevatedButton.icon(
                 icon: Icon(Icons.lock_reset),
-                label: Text('Forgot Password'),
-                onPressed: () => _forgotPassword(context),
-              ),
-              SizedBox(height: 20),
-              ElevatedButton.icon(
-                icon: Icon(Icons.password),
                 label: Text('Change Password'),
-                onPressed: () => _changePassword(context),
+                onPressed: _isForgotPasswordButtonEnabled
+                    ? () => _forgotPassword(context)
+                    : null,
               ),
-              SizedBox(height: 20),
+              SizedBox(height: 30),
               ElevatedButton.icon(
                 icon: Icon(Icons.logout),
                 label: Text('Logout'),

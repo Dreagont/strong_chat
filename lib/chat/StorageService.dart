@@ -20,12 +20,12 @@ class StorageService with ChangeNotifier {
   bool get getIsLoading => isLoading;
   bool get getIsUpLoading => isUploading;
 
-  Future<String> getImage(String userId) async {
-    String filePath = 'avatars/$userId.jpg';
+  Future<String> getImage(String userId, String path) async {
+    String filePath = '$path/$userId.jpg';
     return await firebaseStorage.ref(filePath).getDownloadURL();
   }
 
-  Future<void> uploadImage(String userId) async {
+  Future<void> uploadImage(String userId, String path) async {
     isUploading = true;
     notifyListeners();
 
@@ -37,7 +37,7 @@ class StorageService with ChangeNotifier {
     File file = File(image.path);
 
     try {
-      String filePath = 'avatars/$userId.jpg';
+      String filePath = '$path/$userId.jpg';
 
       await firebaseStorage.ref(filePath).putFile(file);
 

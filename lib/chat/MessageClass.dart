@@ -4,12 +4,14 @@ class Message{
   final String senderId;
   final String friendId;
   final String message;
+  final String messType;
   final Timestamp timestamp;
 
   Message({
     required this.senderId,
     required this.friendId,
     required this.message,
+    required this.messType,
     required this.timestamp
   });
 
@@ -18,6 +20,7 @@ class Message{
       'senderId': senderId,
       'friendId': friendId,
       'message': message,
+      'messType': messType,
       'timeStamp' : timestamp
     };
   }

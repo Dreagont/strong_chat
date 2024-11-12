@@ -15,7 +15,7 @@ class FireStoreService {
     });
   }
 
-  Future<void> sendMessage(String friendId, String messageText) async {
+  Future<void> sendMessage(String friendId, String messageText, String messType) async {
     final String userId = authService.getCurrentUserId();
     final Timestamp timestamp = Timestamp.now();
 
@@ -23,6 +23,7 @@ class FireStoreService {
         senderId: userId,
         friendId: friendId,
         message: messageText,
+        messType: messType,
         timestamp: timestamp);
     List<String> ids = [userId, friendId];
     ids.sort();
@@ -74,6 +75,17 @@ class FireStoreService {
           .update({'avatar': avatarUrl});
     } catch (e) {
       print('Error updating user avatar: $e');
+    }
+  }
+
+  Future<void> updateUserName(String userId, String newName) async {
+    try {
+      await fireStore
+          .collection("Users")
+          .doc(userId)
+          .update({'name': newName});
+    } catch (e) {
+      print('Error updating user name: $e');
     }
   }
 }
