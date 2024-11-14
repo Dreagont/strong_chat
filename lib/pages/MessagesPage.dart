@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:strong_chat/auth/AuthService.dart';
-import 'package:strong_chat/chat/FireStoreService.dart';
+import 'package:strong_chat/services/AuthService.dart';
+import 'package:strong_chat/services/FireStoreService.dart';
 import '../chat/ChatPage.dart';
-import '../chat/UserTile.dart';
+import '../UI_Widgets/UserTile.dart';
 
 class MessagesPage extends StatelessWidget {
   final FireStoreService fireStoreService = FireStoreService();
@@ -45,6 +45,7 @@ class MessagesPage extends StatelessWidget {
   Widget userListItem(Map<String, dynamic> userData, BuildContext context) {
     return UserTile(
       text: userData["name"],
+      avatar: userData["avatar"],
       onTap: () {
         Navigator.push(
           context,

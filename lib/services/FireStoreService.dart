@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:strong_chat/auth/AuthService.dart';
-import 'package:strong_chat/chat/MessageClass.dart';
+
+import '../classes/MessageClass.dart';
+import 'AuthService.dart';
 
 class FireStoreService {
   final FirebaseFirestore fireStore = FirebaseFirestore.instance;
@@ -15,7 +16,8 @@ class FireStoreService {
     });
   }
 
-  Future<void> sendMessage(String friendId, String messageText, String messType) async {
+  Future<void> sendMessage(
+      String friendId, String messageText, String messType) async {
     final String userId = authService.getCurrentUserId();
     final Timestamp timestamp = Timestamp.now();
 
@@ -80,10 +82,7 @@ class FireStoreService {
 
   Future<void> updateUserName(String userId, String newName) async {
     try {
-      await fireStore
-          .collection("Users")
-          .doc(userId)
-          .update({'name': newName});
+      await fireStore.collection("Users").doc(userId).update({'name': newName});
     } catch (e) {
       print('Error updating user name: $e');
     }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'ContactsPage.dart';
 import 'MessagesPage.dart';
 import 'ProfilePage.dart';
 
@@ -15,11 +16,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   static const List<String> _titles = <String>[
     'Messages',
+    'Contacts',
     'Profile',
   ];
 
-  static List<Widget> _pages = <Widget>[
+  static final List<Widget> _pages = <Widget>[
     MessagesPage(),
+    ContactsPage(),
     ProfilePage(),
   ];
 
@@ -44,6 +47,10 @@ class _HomeScreenState extends State<HomeScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.message),
             label: 'Messages',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.contacts),
+            label: 'Contacts',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),

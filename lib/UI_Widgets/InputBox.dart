@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 class InputBox extends StatelessWidget {
   final String hint;
   final TextEditingController controller;
-  const InputBox({super.key, required this.hint, required this.controller});
+  final FocusNode? focusNode;
+  const InputBox({super.key, required this.hint, required this.controller, required this.focusNode});
 
   @override
   Widget build(BuildContext context) {
@@ -11,6 +12,7 @@ class InputBox extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 25.0),
       child: TextField(
         controller: controller,
+        focusNode: focusNode,
         decoration: InputDecoration(
           enabledBorder: OutlineInputBorder(
             borderSide: BorderSide(color: Theme.of(context).colorScheme.tertiary),

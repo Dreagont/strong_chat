@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../pages/HomePage.dart';
-import 'AuthService.dart';
+import '../services/AuthService.dart';
 import 'RegisterPage.dart';
 
 class LoginPage extends StatefulWidget {
@@ -17,7 +17,6 @@ class _LoginPageState extends State<LoginPage> {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
-    // Show the loading dialog
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -32,23 +31,26 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
 
-    // Simulate login process with a 1-second delay
     await Future.delayed(Duration(seconds: 1));
 
-    // Attempt login
     final user = await _authService.loginUserWithEmailAndPassword(email, password);
 
-    // Close the loading dialog
     Navigator.pop(context);
 
     if (user != null) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => HomeScreen(id: user.uid,)),
+        MaterialPageRoute(builder: (context) => HomeScreen(id: user.uid)),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Login failed')));
     }
+  }
+
+  void _quickLogin(String email, String password) {
+    _emailController.text = email;
+    _passwordController.text = password;
+    _login();
   }
 
   @override
@@ -74,6 +76,19 @@ class _LoginPageState extends State<LoginPage> {
             ElevatedButton(
               onPressed: _login,
               child: Text('Login'),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                  onPressed: () => _quickLogin('hehe@gmail.com', '123456'),
+                  child: Text('Quick Login hehe'),
+                ),
+                ElevatedButton(
+                  onPressed: () => _quickLogin('huynhannguyen222@gmail.com', '123456'),
+                  child: Text('Quick Login nguyen222'),
+                ),
+              ],
             ),
             TextButton(
               onPressed: () {

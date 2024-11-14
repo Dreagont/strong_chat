@@ -1,9 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:strong_chat/chat/StorageService.dart';
-import '../auth/AuthService.dart';
+import 'package:strong_chat/services/StorageService.dart';
+import '../services/AuthService.dart';
 import '../auth/LoginPage.dart';
-import '../chat/FireStoreService.dart';
+import '../services/FireStoreService.dart';
 import 'dart:async';
 
 class ProfilePage extends StatefulWidget {
