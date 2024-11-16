@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'ContactsPage.dart';
 import 'MessagesPage.dart';
 import 'ProfilePage.dart';
+import 'ScanQRCodePage.dart'; // Import the new page
 
 class HomeScreen extends StatefulWidget {
   final String id;
@@ -32,11 +33,24 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  void _navigateToScanQRCode() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => ScanQRCodePage()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('${_titles[_selectedIndex]} - ${widget.id}'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.qr_code_scanner),
+            onPressed: _navigateToScanQRCode,
+          ),
+        ],
       ),
       body: IndexedStack(
         index: _selectedIndex,

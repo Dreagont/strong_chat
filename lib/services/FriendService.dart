@@ -180,4 +180,22 @@ class FriendService {
         .get();
     return requestDoc.exists;
   }
+
+  Stream<List<Map<String, dynamic>>> getFriendsStream(String userId) {
+    return fireStore
+        .collection('friends')
+        .where('userId', isEqualTo: userId)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+  }
+
+  Stream<bool> getFriendRequestStatusStream(String senderId, String receiverId) {
+    return fireStore
+        .collection('friendRequests')
+        .where('senderId', isEqualTo: senderId)
+        .where('receiverId', isEqualTo: receiverId)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.isNotEmpty);
+  }
+
 }

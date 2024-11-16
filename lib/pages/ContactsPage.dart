@@ -51,6 +51,10 @@ class _ContactsPageState extends State<ContactsPage> {
     });
   }
 
+  Future<void> _handleRefresh() async {
+    await _reloadLists();
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -76,7 +80,12 @@ class _ContactsPageState extends State<ContactsPage> {
           if (isLoading)
             const Center(child: CircularProgressIndicator())
           else
-            Expanded(child: buildUserLists(context)),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _handleRefresh,
+                child: buildUserLists(context),
+              ),
+            ),
         ],
       ),
     );
@@ -170,32 +179,73 @@ class _ContactsPageState extends State<ContactsPage> {
           return Text('Error: ${snapshot.error}');
         }
 
-        final isFriend = snapshot.data ?? false;
+        var isFriend = snapshot.data ?? false;
 
-        return UserTile(
-          text: userData["name"],
-          avatar: userData["avatar"],
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => UserProfilePage(userData: userData),
-              ),
-            );
-          },
-          showSendRequestButton: !isFriend,
-          onSendRequest: () async {
-            await friendService.addFriend(userData['id']);
-            await _reloadLists();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Friend request sent')),
+        return FutureBuilder<bool>(
+          future: friendService.checkReceivedRequest(userData["id"], authService.getCurrentUserId()),
+          builder: (context, requestSnapshot) {
+            if (requestSnapshot.connectionState == ConnectionState.waiting) {
+              return Center(child: CircularProgressIndicator());
+            }
+
+            if (requestSnapshot.hasError) {
+              return Text('Error: ${requestSnapshot.error}');
+            }
+
+            var hasReceivedRequest = requestSnapshot.data ?? false;
+
+            return FutureBuilder<bool>(
+              future: friendService.checkPendingRequest(authService.getCurrentUserId(), userData["id"]),
+              builder: (context, pendingSnapshot) {
+                if (pendingSnapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                }
+
+                if (pendingSnapshot.hasError) {
+                  return Text('Error: ${pendingSnapshot.error}');
+                }
+
+                var hasSentRequest = pendingSnapshot.data ?? false;
+                isFriend = isFriend || hasReceivedRequest;
+
+                return UserTile(
+                  text: userData["name"],
+                  avatar: userData["avatar"],
+                  onTap: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => UserProfilePage(userData: userData),
+                      ),
+                    );
+                    if (result == true) {
+                      _reloadLists();
+                    }
+                  },
+                  showSendRequestButton: !isFriend || hasSentRequest,
+                  hasSentRequest: hasSentRequest,
+                  onSendRequest: () async {
+                    await friendService.addFriend(userData['id']);
+                    await _reloadLists();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Friend request sent')),
+                    );
+                  },
+                  onCancelRequest: () async {
+                    await friendService.cancelFriendRequest(userData['id']);
+                    await _reloadLists();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Friend request cancelled')),
+                    );
+                  },
+                );
+              },
             );
           },
         );
       },
     );
   }
-
 
   Widget friendRequestItem(Map<String, dynamic> request, BuildContext context) {
     return FutureBuilder<Map<String, dynamic>?>(

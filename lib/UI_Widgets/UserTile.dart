@@ -7,8 +7,10 @@ class UserTile extends StatelessWidget {
   final void Function()? onAccept;
   final void Function()? onDecline;
   final void Function()? onSendRequest;
+  final void Function()? onCancelRequest;
   final bool showRequestActions;
   final bool showSendRequestButton;
+  final bool hasSentRequest;
 
   const UserTile({
     super.key,
@@ -18,8 +20,10 @@ class UserTile extends StatelessWidget {
     this.onAccept,
     this.onDecline,
     this.onSendRequest,
+    this.onCancelRequest,
     this.showRequestActions = false,
     this.showSendRequestButton = false,
+    this.hasSentRequest = false,
   });
 
   @override
@@ -32,36 +36,43 @@ class UserTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
         ),
         margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 25),
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         child: Row(
           children: [
             CircleAvatar(
               backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
               radius: 20,
-              child: avatar.isEmpty ? Icon(Icons.person, color: Colors.white) : null,
+              child: avatar.isEmpty ? const Icon(Icons.person, color: Colors.white) : null,
             ),
             const SizedBox(width: 20),
             Expanded(
               child: Text(
                 text,
-                style: TextStyle(color: Colors.white),
+                style: const TextStyle(color: Colors.white),
               ),
             ),
             if (showRequestActions) ...[
               IconButton(
-                icon: Icon(Icons.check, color: Colors.green),
+                icon: const Icon(Icons.check, color: Colors.green),
                 onPressed: onAccept,
               ),
               IconButton(
-                icon: Icon(Icons.close, color: Colors.red),
+                icon: const Icon(Icons.close, color: Colors.red),
                 onPressed: onDecline,
               ),
             ],
-            if (showSendRequestButton)
+            if (showSendRequestButton) ...[
               IconButton(
-                icon: Icon(Icons.person_add, color: Colors.white),
-                onPressed: onSendRequest,
+                icon: hasSentRequest
+                    ? Transform(
+                  alignment: Alignment.center,
+                  transform: Matrix4.rotationY(3.14159),
+                  child: Icon(Icons.person_remove, color: Colors.white),
+                )
+                    : Icon(Icons.person_add, color: Colors.white),
+                onPressed: hasSentRequest ? onCancelRequest : onSendRequest,
               ),
+            ],
           ],
         ),
       ),

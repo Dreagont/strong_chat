@@ -39,6 +39,14 @@ class FireStoreService {
         .add(message.MessToMap());
   }
 
+  Stream<Map<String, dynamic>?> getUserInfoStream(String userId) {
+    return fireStore
+        .collection('users')
+        .doc(userId)
+        .snapshots()
+        .map((doc) => doc.data());
+  }
+
   Stream<QuerySnapshot> getMessage(String userId, String friendId) {
     List<String> ids = [userId, friendId];
     ids.sort();

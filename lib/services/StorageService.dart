@@ -1,10 +1,9 @@
-
 import 'dart:io';
-
+import 'dart:typed_data';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
-
 import 'FireStoreService.dart';
 
 class StorageService with ChangeNotifier {
@@ -12,7 +11,6 @@ class StorageService with ChangeNotifier {
   final FireStoreService _fireStoreService = FireStoreService();
 
   List<String> imageUrl = [];
-
   bool isLoading = false;
   bool isUploading = false;
 
@@ -32,20 +30,44 @@ class StorageService with ChangeNotifier {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
 
-    if (image == null) return;
+    if (image == null) {
+      isUploading = false;
+      notifyListeners();
+      return;
+    }
 
     File file = File(image.path);
 
     try {
-      String filePath = '$path/$userId.jpg';
+      Uint8List imageBytes = await file.readAsBytes();
+      img.Image? originalImage = img.decodeImage(imageBytes);
+      if (originalImage == null) throw Exception("Failed to decode image.");
 
-      await firebaseStorage.ref(filePath).putFile(file);
+      const int maxFileSize = 500 * 1024;
+      img.Image resizedImage = img.copyResize(originalImage, width: 800);
+
+      Uint8List compressedBytes = Uint8List.fromList(
+        img.encodeJpg(resizedImage, quality: 85),
+      );
+
+      while (compressedBytes.lengthInBytes > maxFileSize) {
+        resizedImage = img.copyResize(resizedImage, width: resizedImage.width ~/ 1.2);
+        compressedBytes = Uint8List.fromList(
+          img.encodeJpg(resizedImage, quality: 85),
+        );
+      }
+
+      final tempFile = File('${file.parent.path}/compressed_${file.uri.pathSegments.last}');
+      await tempFile.writeAsBytes(compressedBytes);
+
+      String filePath = '$path/$userId.jpg';
+      await firebaseStorage.ref(filePath).putFile(tempFile);
 
       String imageUrl = await firebaseStorage.ref(filePath).getDownloadURL();
 
       _fireStoreService.updateUserAvatar(userId, imageUrl);
       notifyListeners();
-    } catch(e) {
+    } catch (e) {
       print(e);
     } finally {
       isUploading = false;

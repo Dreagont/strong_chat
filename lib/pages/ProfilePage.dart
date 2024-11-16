@@ -5,6 +5,7 @@ import '../services/AuthService.dart';
 import '../auth/LoginPage.dart';
 import '../services/FireStoreService.dart';
 import 'dart:async';
+import 'MyQRCodePage.dart';  // Import the new QR code page
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -37,7 +38,6 @@ class _ProfilePageState extends State<ProfilePage> {
         _userEmail = userInfo['email'] as String? ?? 'user@example.com';
       });
     }
-
   }
 
   void _logout(BuildContext context) async {
@@ -71,14 +71,13 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-
   void _forgotPassword(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Password reset link has been sent to your email')),
     );
 
     try {
-       FirebaseAuth.instance.sendPasswordResetEmail(
+      FirebaseAuth.instance.sendPasswordResetEmail(
         email: _userEmail,
       );
     } catch (e) {
@@ -161,6 +160,18 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  void _navigateToMyQRCodePage(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MyQRCodePage(
+          userId: _authService.getCurrentUserId(),
+          userName: _userName,
+          avatarUrl: _avatarUrl,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -221,7 +232,13 @@ class _ProfilePageState extends State<ProfilePage> {
                     ? () => _forgotPassword(context)
                     : null,
               ),
-              SizedBox(height: 30),
+              SizedBox(height: 20),  // Adjust the spacing here
+              ElevatedButton.icon(
+                icon: Icon(Icons.qr_code),
+                label: Text('My QR Code'),
+                onPressed: () => _navigateToMyQRCodePage(context),
+              ),
+              SizedBox(height: 30),  // Adjust the spacing here
               ElevatedButton.icon(
                 icon: Icon(Icons.logout),
                 label: Text('Logout'),
