@@ -4,49 +4,34 @@ import '../../services/FireStoreService.dart';
 
 class UserProfilePage extends StatefulWidget {
   final Map<String, dynamic> userData;
+  final String relationshipStatus;
 
-  UserProfilePage({Key? key, required this.userData}) : super(key: key);
+  UserProfilePage({
+    Key? key,
+    required this.userData,
+    required this.relationshipStatus,
+  }) : super(key: key);
 
   @override
   _UserProfilePageState createState() => _UserProfilePageState();
 }
 
 class _UserProfilePageState extends State<UserProfilePage> {
-  final FireStoreService fireStoreService = FireStoreService();
   final FriendService friendService = FriendService();
-  String relationshipStatus = 'add';
+  late String relationshipStatus;
 
   @override
   void initState() {
     super.initState();
-    _checkFriendStatus();
-  }
-
-  void _checkFriendStatus() async {
-    final String userId = fireStoreService.authService.getCurrentUserId();
-    final friendId = widget.userData['id'];
-
-    final bool isFriend = await friendService.checkIfFriends(userId, friendId);
-    final bool hasPendingRequest = await friendService.checkPendingRequest(userId, friendId);
-    final bool hasReceivedRequest = await friendService.checkReceivedRequest(userId, friendId);
-
-    setState(() {
-      if (isFriend) {
-        relationshipStatus = 'remove';
-      } else if (hasPendingRequest) {
-        relationshipStatus = 'cancel';
-      } else if (hasReceivedRequest) {
-        relationshipStatus = 'accept';
-      } else {
-        relationshipStatus = 'add';
-      }
-    });
+    relationshipStatus = widget.relationshipStatus;
   }
 
   void handleFriendAction(BuildContext context) async {
     final friendId = widget.userData['id'];
     if (relationshipStatus == 'add') {
       await friendService.addFriend(friendId);
+      Navigator.pop(context, true);
+
       setState(() {
         relationshipStatus = 'cancel';
       });
@@ -55,6 +40,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
       );
     } else if (relationshipStatus == 'cancel') {
       await friendService.cancelFriendRequest(friendId);
+      Navigator.pop(context, true);
+
       setState(() {
         relationshipStatus = 'add';
       });
@@ -63,6 +50,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
       );
     } else if (relationshipStatus == 'remove') {
       await friendService.removeFriend(friendId);
+
       Navigator.pop(context, true);
     } else if (relationshipStatus == 'accept') {
       await friendService.acceptFriendRequest(friendId);
@@ -99,13 +87,21 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 children: [
                   CircleAvatar(
                     radius: 50,
-                    backgroundImage: NetworkImage(widget.userData["avatar"] ?? ''),
-                    child: widget.userData["avatar"] == null ? Icon(Icons.person, size: 50) : null,
+                    backgroundImage:
+                        NetworkImage(widget.userData["avatar"] ?? ''),
+                    child: widget.userData["avatar"] == null
+                        ? Icon(Icons.person, size: 50)
+                        : null,
                   ),
                   const SizedBox(height: 16),
                   Text(
                     widget.userData["name"],
                     style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    widget.userData["email"],
+                    style: TextStyle(fontSize: 16,),
                   ),
                   const SizedBox(height: 16),
                   Row(
@@ -123,12 +119,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
                           relationshipStatus == 'add'
                               ? 'Add Friend'
                               : relationshipStatus == 'cancel'
-                              ? 'Cancel Request'
-                              : relationshipStatus == 'remove'
-                              ? 'Remove Friend'
-                              : relationshipStatus == 'accept'
-                              ? 'Accept Request'
-                              : 'Decline Request',
+                                  ? 'Cancel Request'
+                                  : relationshipStatus == 'remove'
+                                      ? 'Remove Friend'
+                                      : relationshipStatus == 'accept'
+                                          ? 'Accept Request'
+                                          : 'Decline Request',
                         ),
                       ),
                     ],

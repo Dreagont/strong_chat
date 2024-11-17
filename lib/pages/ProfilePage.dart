@@ -188,7 +188,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     radius: 50,
                     backgroundImage: _avatarUrl != null
                         ? NetworkImage(_avatarUrl!)
-                        : null,
+                        : AssetImage('assets/loading.png') as ImageProvider,
                   ),
                   Positioned(
                     bottom: 0,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:strong_chat/services/FireStoreService.dart';
 
 import '../chat/contacts/UserProfilePage.dart';
 import '../services/FriendService.dart';
@@ -12,16 +13,44 @@ class ScanQRCodePage extends StatefulWidget {
 }
 
 class _ScanQRCodePageState extends State<ScanQRCodePage> {
-  final FriendService _friendService = FriendService();
   final MobileScannerController _controller = MobileScannerController(
     detectionSpeed: DetectionSpeed.noDuplicates,
     returnImage: true,
   );
+  final FriendService friendService = FriendService();
+  final FireStoreService fireStoreService = FireStoreService();
 
-  void _showProfileConfirmationDialog(BuildContext context, String friendId, Uint8List? image) async {
-    final DocumentSnapshot friendSnapshot = await FirebaseFirestore.instance.collection('Users').doc(friendId).get();
+  Future<String> checkFriendStatus(var friendId) async {
+    String relationshipStatus = "";
+    final String userId = fireStoreService.authService.getCurrentUserId();
+
+    final bool isFriend = await friendService.checkIfFriends(userId, friendId);
+    final bool hasPendingRequest =
+        await friendService.checkPendingRequest(userId, friendId);
+    final bool hasReceivedRequest =
+        await friendService.checkReceivedRequest(userId, friendId);
+
+    if (isFriend) {
+      relationshipStatus = 'remove';
+    } else if (hasPendingRequest) {
+      relationshipStatus = 'cancel';
+    } else if (hasReceivedRequest) {
+      relationshipStatus = 'accept';
+    } else {
+      relationshipStatus = 'add';
+    }
+
+    return relationshipStatus;
+  }
+
+  void _showProfileConfirmationDialog(
+      BuildContext context, String friendId, Uint8List? image) async {
+    final DocumentSnapshot friendSnapshot = await FirebaseFirestore.instance
+        .collection('Users')
+        .doc(friendId)
+        .get();
     final friendData = friendSnapshot.data() as Map<String, dynamic>?;
-
+    final String status = await checkFriendStatus(friendId);
     if (friendData != null) {
       final friendName = friendData['name'] ?? 'Unknown';
       final friendAvatar = friendData['avatar'] ?? '';
@@ -36,8 +65,12 @@ class _ScanQRCodePageState extends State<ScanQRCodePage> {
               children: [
                 CircleAvatar(
                   radius: 30,
-                  backgroundImage: friendAvatar.isNotEmpty ? NetworkImage(friendAvatar) : null,
-                  child: friendAvatar.isEmpty ? Icon(Icons.person, size: 30) : null,
+                  backgroundImage: friendAvatar.isNotEmpty
+                      ? NetworkImage(friendAvatar)
+                      : null,
+                  child: friendAvatar.isEmpty
+                      ? Icon(Icons.person, size: 30)
+                      : null,
                 ),
                 SizedBox(height: 10),
                 Text(friendName, style: TextStyle(fontSize: 18)),
@@ -52,7 +85,8 @@ class _ScanQRCodePageState extends State<ScanQRCodePage> {
               TextButton(
                 onPressed: () {
                   Navigator.of(context).pop();
-                  _controller.start();  // Restart the scanner when the dialog is dismissed
+                  _controller
+                      .start(); // Restart the scanner when the dialog is dismissed
                 },
                 child: Text('Cancel'),
               ),
@@ -62,7 +96,8 @@ class _ScanQRCodePageState extends State<ScanQRCodePage> {
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => UserProfilePage(userData: friendData),
+                      builder: (context) =>
+                          UserProfilePage(userData: friendData, relationshipStatus: status,),
                     ),
                   );
                 },
@@ -77,7 +112,7 @@ class _ScanQRCodePageState extends State<ScanQRCodePage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Friend not found!')),
       );
-      _controller.start();  // Restart the scanner if friend data is not found
+      _controller.start(); // Restart the scanner if friend data is not found
     }
   }
 
@@ -105,7 +140,8 @@ class _ScanQRCodePageState extends State<ScanQRCodePage> {
             }
             print('Barcode: $barcodeData');
 
-            _controller.stop();  // Stop the scanner to prevent multiple detections
+            _controller
+                .stop(); // Stop the scanner to prevent multiple detections
             _showProfileConfirmationDialog(context, barcodeData, image);
           }
         },
