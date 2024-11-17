@@ -83,28 +83,29 @@ class FriendService {
     });
   }
 
-  Future<List<Map<String, dynamic>>> getFriends(String userId) async {
-    final friendsSnapshot = await fireStore
+  Stream<List<Map<String, dynamic>>> getFriendsStream(String userId) {
+    return fireStore
         .collection("Users")
         .doc(userId)
         .collection("friends")
-        .get();
-
-    List<Map<String, dynamic>> friends = [];
-    for (var doc in friendsSnapshot.docs) {
-      final friendData = await getUserInfo(doc.id);
-      if (friendData != null) {
-        friendData['id'] = doc.id;
-        friends.add(friendData);
+        .snapshots()
+        .asyncMap((snapshot) async {
+      List<Map<String, dynamic>> friends = [];
+      for (var doc in snapshot.docs) {
+        final friendData = await getUserInfo(doc.id);
+        if (friendData != null) {
+          friendData['id'] = doc.id;
+          friends.add(friendData);
+        }
       }
-    }
-    return friends;
+      return friends;
+    });
   }
 
   Future<Map<String, dynamic>?> getUserInfo(String userId) async {
     try {
       DocumentSnapshot userDoc =
-          await fireStore.collection("Users").doc(userId).get();
+      await fireStore.collection("Users").doc(userId).get();
       if (userDoc.exists) {
         return userDoc.data() as Map<String, dynamic>?;
       } else {
@@ -180,22 +181,4 @@ class FriendService {
         .get();
     return requestDoc.exists;
   }
-
-  Stream<List<Map<String, dynamic>>> getFriendsStream(String userId) {
-    return fireStore
-        .collection('friends')
-        .where('userId', isEqualTo: userId)
-        .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
-  }
-
-  Stream<bool> getFriendRequestStatusStream(String senderId, String receiverId) {
-    return fireStore
-        .collection('friendRequests')
-        .where('senderId', isEqualTo: senderId)
-        .where('receiverId', isEqualTo: receiverId)
-        .snapshots()
-        .map((snapshot) => snapshot.docs.isNotEmpty);
-  }
-
 }

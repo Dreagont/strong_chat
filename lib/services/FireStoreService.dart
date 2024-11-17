@@ -16,11 +16,29 @@ class FireStoreService {
     });
   }
 
+  Stream<List<Map<String, dynamic>>> getChatsStream(String userId) {
+    return fireStore
+        .collection("Users")
+        .doc(userId)
+        .collection("chats")
+        .snapshots()
+        .asyncMap((snapshot) async {
+      List<Map<String, dynamic>> chatsList = [];
+      for (var doc in snapshot.docs) {
+        final friendData = await getUserInfo(doc['friendId']);
+        if (friendData != null) {
+          chatsList.add(friendData);
+        }
+      }
+      return chatsList;
+    });
+  }
+
+
   Future<void> sendMessage(
       String friendId, String messageText, String messType) async {
     final String userId = authService.getCurrentUserId();
     final Timestamp timestamp = Timestamp.now();
-
     Message message = Message(
         senderId: userId,
         friendId: friendId,
@@ -29,9 +47,18 @@ class FireStoreService {
         timestamp: timestamp);
     List<String> ids = [userId, friendId];
     ids.sort();
-
     String chatBoxId = ids.join('_');
-
+    final querySnapshot = await fireStore
+        .collection("Users")
+        .doc(userId)
+        .collection("chats")
+        .where('friendId', isEqualTo: friendId)
+        .get();
+    if (querySnapshot.docs.isEmpty) {
+      await fireStore.collection("Users").doc(userId).collection("chats").add({
+        'friendId': friendId,
+      });
+    }
     await fireStore
         .collection("ChatRoom")
         .doc(chatBoxId)
