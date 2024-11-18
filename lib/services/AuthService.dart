@@ -1,5 +1,4 @@
 import 'dart:developer';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -40,7 +39,6 @@ class AuthService {
         'email': cred.user!.email,
         'name': name,
         'avatar':'https://firebasestorage.googleapis.com/v0/b/flutter-final-app-bcd9d.appspot.com/o/default_avatar.jpg?alt=media&token=974ef2cd-c48c-4a15-979e-8350a0c37168'
-
       });
 
       return cred.user;
@@ -59,6 +57,15 @@ class AuthService {
     } catch (e) {
       log("Something went wrong");
       return null;
+    }
+  }
+
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      await auth.sendPasswordResetEmail(email: email);
+      log("Password reset email sent to $email");
+    } catch (e) {
+      log("Failed to send password reset email: $e");
     }
   }
 

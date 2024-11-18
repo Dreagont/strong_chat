@@ -5,9 +5,11 @@ import 'package:strong_chat/services/AuthService.dart';
 import 'package:strong_chat/services/FireStoreService.dart';
 import 'package:strong_chat/UI_Widgets/InputBox.dart';
 import 'package:intl/intl.dart';
+import 'package:video_player/video_player.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../services/StorageService.dart';
-import '../ultils/Utils.dart';
+import '../utils/Utils.dart';
 
 class ChatPage extends StatefulWidget {
   final String friendName;
@@ -51,26 +53,10 @@ class _ChatPageState extends State<ChatPage> {
         duration: Duration(milliseconds: 300), curve: Curves.fastOutSlowIn);
   }
 
-  void showLoadingDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          child: Center(
-            child: CircularProgressIndicator(),
-          ),
-        );
-      },
-    );
-  }
-
   void sendTextMessage() async {
     if (messController.text.isNotEmpty) {
       await chatService.sendMessage(
-          widget.friendId, messController.text, 'text');
-
+          widget.friendId, messController.text, 'text', "");
       messController.clear();
       goToBot();
     }
@@ -82,12 +68,35 @@ class _ChatPageState extends State<ChatPage> {
     ids.sort();
     String chatBoxId = ids.join('_');
 
-    String filePath = 'chatImages/$chatBoxId/$timestamp.jpg';
+    String filePath = 'ChatData/$chatBoxId/$timestamp.jpg';
     await storageService.uploadImage(
-        timestamp.toString(), 'chatImages/$chatBoxId');
+        timestamp.toString(), 'ChatData/$chatBoxId');
     String mess = await FirebaseStorage.instance.ref(filePath).getDownloadURL();
-    await chatService.sendMessage(widget.friendId, mess, 'image');
-    //setState(() {});
+    await chatService.sendMessage(widget.friendId, mess, 'image', "");
+    goToBot();
+  }
+
+  void sendVideoMessage(BuildContext context) async {
+    final Timestamp timestamp = Timestamp.now();
+    List<String> ids = [authService.getCurrentUserId(), widget.friendId];
+    ids.sort();
+    String chatBoxId = ids.join('_');
+
+    await storageService.uploadVideo(
+        timestamp.toString(), 'ChatData/$chatBoxId', chatBoxId, widget.friendId);
+
+    goToBot();
+  }
+
+  void sendFileMessage(BuildContext context) async {
+    final Timestamp timestamp = Timestamp.now();
+    List<String> ids = [authService.getCurrentUserId(), widget.friendId];
+    ids.sort();
+    String chatBoxId = ids.join('_');
+
+    await storageService.uploadFile(
+        timestamp.toString(), 'ChatData/$chatBoxId', chatBoxId, widget.friendId);
+    goToBot();
   }
 
   void showMediaOptions(BuildContext context) {
@@ -111,7 +120,7 @@ class _ChatPageState extends State<ChatPage> {
                 title: Text('Video'),
                 onTap: () {
                   Navigator.pop(context);
-                  // Add logic to handle video upload
+                  sendVideoMessage(context);
                 },
               ),
               ListTile(
@@ -119,7 +128,7 @@ class _ChatPageState extends State<ChatPage> {
                 title: Text('File'),
                 onTap: () {
                   Navigator.pop(context);
-                  // Add logic to handle file upload
+                  sendFileMessage(context);
                 },
               ),
             ],
@@ -139,13 +148,11 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-// Utility function to format the timestamp
   String formatTimestamp(Timestamp timestamp) {
     final messageTime = timestamp.toDate();
     return DateFormat('HH:mm dd/MM/yyyy').format(messageTime);
   }
 
-// Modified MessBox widget to include time display logic between messages
   Widget MessageList() {
     String userId = authService.getCurrentUserId();
     Timestamp? lastTimestamp;
@@ -186,7 +193,6 @@ class _ChatPageState extends State<ChatPage> {
       child: Column(
         crossAxisAlignment: isMyMess ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
-          // Display the time above the message if the flag is true
           if (showTimestamp)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 5.0),
@@ -209,15 +215,27 @@ class _ChatPageState extends State<ChatPage> {
             padding: EdgeInsets.all(16),
             margin: EdgeInsets.symmetric(vertical: 5, horizontal: 25),
             child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: 250), // limit the width
+              constraints: BoxConstraints(maxWidth: 250),
               child: data["messType"] == "image"
-                  ? Image.network(
-                data["message"], // Load the image from the URL
-                fit: BoxFit.cover,
+                  ? Image.network(data["message"], fit: BoxFit.cover)
+                  : data["messType"] == "video"
+                  ? VideoPlayerWidget(videoUrl: data["message"])
+                  : data["messType"] == "file"
+                  ? GestureDetector(
+                onTap: () => launchUrl(Uri.parse(data["message"])),
+                child: Row(
+                  children: [
+                    Icon(Icons.insert_drive_file, color: Colors.white),
+                    SizedBox(width: 8),
+                    Expanded(child: Text(data["fileName"], style: TextStyle(color: Colors.white))),
+                    IconButton(
+                      icon: Icon(Icons.download, color: Colors.white),
+                      onPressed: () => launchUrl(Uri.parse(data["message"])),
+                    ),
+                  ],
+                ),
               )
-                  : RichText(
-                text: replaceEmoticons(data["message"]),
-              ),
+                  : RichText(text: replaceEmoticons(data["message"])),
             ),
           ),
         ],
@@ -236,13 +254,59 @@ class _ChatPageState extends State<ChatPage> {
           ),
           Expanded(
               child: InputBox(
-            hint: "Type your message",
-            controller: messController,
-            focusNode: focusNode,
-          )),
+                hint: "Type your message",
+                controller: messController,
+                focusNode: focusNode,
+              )),
           IconButton(onPressed: sendTextMessage, icon: Icon(Icons.send))
         ],
       ),
     );
+  }
+}
+
+class VideoPlayerWidget extends StatefulWidget {
+  final String videoUrl;
+
+  VideoPlayerWidget({required this.videoUrl});
+
+  @override
+  _VideoPlayerWidgetState createState() => _VideoPlayerWidgetState();
+}
+
+class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
+  late VideoPlayerController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = VideoPlayerController.network(widget.videoUrl)
+      ..initialize().then((_) {
+        setState(() {});
+      })
+      ..setLooping(true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _controller.value.isInitialized
+        ? GestureDetector(
+      onTap: () {
+        setState(() {
+          _controller.value.isPlaying ? _controller.pause() : _controller.play();
+        });
+      },
+      child: AspectRatio(
+        aspectRatio: _controller.value.aspectRatio,
+        child: VideoPlayer(_controller),
+      ),
+    )
+        : Center(child: CircularProgressIndicator());
   }
 }

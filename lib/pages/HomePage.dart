@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'ContactsPage.dart';
 import 'MessagesPage.dart';
 import 'ProfilePage.dart';
-import 'ScanQRCodePage.dart'; // Import the new page
+import 'ScanQRCodePage.dart';
 
 class HomeScreen extends StatefulWidget {
   final String id;

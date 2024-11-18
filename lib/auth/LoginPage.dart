@@ -53,6 +53,63 @@ class _LoginPageState extends State<LoginPage> {
     _login();
   }
 
+  void _forgotPassword() async {
+    final emailController = TextEditingController();
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Forgot Password'),
+          content: TextField(
+            controller: emailController,
+            decoration: InputDecoration(labelText: 'Enter your email'),
+            keyboardType: TextInputType.emailAddress,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(null),
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(emailController.text.trim()),
+              child: Text('Send Reset Link'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result != null && result.isNotEmpty) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 20),
+              Text("Sending reset link..."),
+            ],
+          ),
+        ),
+      );
+
+      try {
+        await _authService.sendPasswordResetEmail(result);
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Password reset link sent to $result')),
+        );
+      } catch (e) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString()}')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -98,6 +155,10 @@ class _LoginPageState extends State<LoginPage> {
                 );
               },
               child: Text('Register'),
+            ),
+            TextButton(
+              onPressed: _forgotPassword,
+              child: Text('Forgot Password'),
             ),
           ],
         ),

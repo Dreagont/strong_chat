@@ -36,7 +36,7 @@ class FireStoreService {
 
 
   Future<void> sendMessage(
-      String friendId, String messageText, String messType) async {
+      String friendId, String messageText, String messType, String fileName) async {
     final String userId = authService.getCurrentUserId();
     final Timestamp timestamp = Timestamp.now();
     Message message = Message(
@@ -44,7 +44,9 @@ class FireStoreService {
         friendId: friendId,
         message: messageText,
         messType: messType,
-        timestamp: timestamp);
+        timestamp: timestamp,
+        fileName: fileName
+    );
     List<String> ids = [userId, friendId];
     ids.sort();
     String chatBoxId = ids.join('_');
@@ -59,6 +61,19 @@ class FireStoreService {
         'friendId': friendId,
       });
     }
+
+    final querySnapshot1 = await fireStore
+        .collection("Users")
+        .doc(friendId)
+        .collection("chats")
+        .where('friendId', isEqualTo: userId)
+        .get();
+    if (querySnapshot1.docs.isEmpty) {
+      await fireStore.collection("Users").doc(friendId).collection("chats").add({
+        'friendId': userId,
+      });
+    }
+
     await fireStore
         .collection("ChatRoom")
         .doc(chatBoxId)

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:strong_chat/services/FriendService.dart';
 import '../../services/FireStoreService.dart';
+import '../ChatPage.dart';
 
 class UserProfilePage extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -109,7 +110,15 @@ class _UserProfilePageState extends State<UserProfilePage> {
                     children: [
                       ElevatedButton(
                         onPressed: () {
-                          // Add chat logic here
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ChatPage(
+                                friendName: widget.userData["name"],
+                                friendId: widget.userData["id"],
+                              ),
+                            ),
+                          );
                         },
                         child: Text("Chat"),
                       ),

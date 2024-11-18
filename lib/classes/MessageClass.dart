@@ -6,13 +6,15 @@ class Message{
   final String message;
   final String messType;
   final Timestamp timestamp;
+  final String fileName;
 
   Message({
     required this.senderId,
     required this.friendId,
     required this.message,
     required this.messType,
-    required this.timestamp
+    required this.timestamp,
+    required this.fileName
   });
 
   Map<String, dynamic> MessToMap() {
@@ -21,7 +23,8 @@ class Message{
       'friendId': friendId,
       'message': message,
       'messType': messType,
-      'timeStamp' : timestamp
+      'timeStamp' : timestamp,
+      'fileName': fileName
     };
   }
 }

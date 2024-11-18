@@ -1,11 +1,10 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:strong_chat/services/AuthService.dart';
+import 'package:strong_chat/services/FireStoreService.dart';
 import 'package:strong_chat/services/StorageService.dart';
-import '../services/AuthService.dart';
 import '../auth/LoginPage.dart';
-import '../services/FireStoreService.dart';
-import 'dart:async';
-import 'MyQRCodePage.dart';  // Import the new QR code page
+import 'MyQRCodePage.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -19,7 +18,8 @@ class _ProfilePageState extends State<ProfilePage> {
   String? _avatarUrl;
   String _userName = 'User Name';
   String _userEmail = 'user@example.com';
-  bool _isForgotPasswordButtonEnabled = true;
+  bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
 
   @override
   void initState() {
@@ -66,41 +66,140 @@ class _ProfilePageState extends State<ProfilePage> {
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => LoginPage()),
-            (route) => false,
+        (route) => false,
       );
     }
   }
 
-  void _forgotPassword(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Password reset link has been sent to your email')),
+  void _changePassword(BuildContext context) async {
+    final TextEditingController oldPasswordController = TextEditingController();
+    final TextEditingController newPasswordController = TextEditingController();
+    final TextEditingController confirmPasswordController = TextEditingController();
+
+    bool isOldPasswordVisible = false;
+    bool isNewPasswordVisible = false;
+    bool isConfirmPasswordVisible = false;
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setDialogState) {
+            return AlertDialog(
+              title: Text('Change Password'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: oldPasswordController,
+                    decoration: InputDecoration(
+                      labelText: 'Old Password',
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          isOldPasswordVisible
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                        ),
+                        onPressed: () {
+                          setDialogState(() {
+                            isOldPasswordVisible = !isOldPasswordVisible;
+                          });
+                        },
+                      ),
+                    ),
+                    obscureText: !isOldPasswordVisible,
+                  ),
+                  TextField(
+                    controller: newPasswordController,
+                    decoration: InputDecoration(
+                      labelText: 'New Password',
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          isNewPasswordVisible
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                        ),
+                        onPressed: () {
+                          setDialogState(() {
+                            isNewPasswordVisible = !isNewPasswordVisible;
+                          });
+                        },
+                      ),
+                    ),
+                    obscureText: !isNewPasswordVisible,
+                  ),
+                  TextField(
+                    controller: confirmPasswordController,
+                    decoration: InputDecoration(
+                      labelText: 'Confirm Password',
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          isConfirmPasswordVisible
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                        ),
+                        onPressed: () {
+                          setDialogState(() {
+                            isConfirmPasswordVisible = !isConfirmPasswordVisible;
+                          });
+                        },
+                      ),
+                    ),
+                    obscureText: !isConfirmPasswordVisible,
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    if (newPasswordController.text ==
+                        confirmPasswordController.text) {
+                      Navigator.of(context).pop(true);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Passwords do not match')),
+                      );
+                    }
+                  },
+                  child: Text('Change Password'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
 
-    try {
-      FirebaseAuth.instance.sendPasswordResetEmail(
-        email: _userEmail,
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
+    if (result == true) {
+      showLoadingDialog(context);
+      try {
+        final user = FirebaseAuth.instance.currentUser;
+        if (user != null) {
+          final cred = EmailAuthProvider.credential(
+            email: _userEmail,
+            password: oldPasswordController.text,
+          );
+
+          await user.reauthenticateWithCredential(cred);
+
+          await user.updatePassword(newPasswordController.text);
+
+          Navigator.of(context).pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Password changed successfully')),
+          );
+        }
+      } catch (e) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString()}')),
+        );
+      }
     }
-
-    setState(() {
-      _isForgotPasswordButtonEnabled = false;
-    });
-
-    Timer(Duration(seconds: 5), () {
-      setState(() {
-        _isForgotPasswordButtonEnabled = true;
-      });
-    });
-  }
-
-  void _changePassword(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Password change feature coming soon')),
-    );
   }
 
   void showLoadingDialog(BuildContext context) {
@@ -120,14 +219,16 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void _editProfilePicture() async {
     showLoadingDialog(context);
-    await storageService.uploadImage(_authService.getCurrentUserId(), 'avatars');
+    await storageService.uploadAvatar(
+        _authService.getCurrentUserId(), 'avatars');
     Navigator.of(context).pop();
     _loadUserData();
     setState(() {});
   }
 
   void _editName() async {
-    final TextEditingController nameController = TextEditingController(text: _userName);
+    final TextEditingController nameController =
+        TextEditingController(text: _userName);
 
     final newName = await showDialog<String>(
       context: context,
@@ -144,7 +245,8 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Text('Cancel'),
             ),
             TextButton(
-              onPressed: () => Navigator.of(context).pop(nameController.text.trim()),
+              onPressed: () =>
+                  Navigator.of(context).pop(nameController.text.trim()),
               child: Text('Confirm'),
             ),
           ],
@@ -156,7 +258,8 @@ class _ProfilePageState extends State<ProfilePage> {
       setState(() {
         _userName = newName;
       });
-      await _fireStoreService.updateUserName(_authService.getCurrentUserId(), newName);
+      await _fireStoreService.updateUserName(
+          _authService.getCurrentUserId(), newName);
     }
   }
 
@@ -228,17 +331,15 @@ class _ProfilePageState extends State<ProfilePage> {
               ElevatedButton.icon(
                 icon: Icon(Icons.lock_reset),
                 label: Text('Change Password'),
-                onPressed: _isForgotPasswordButtonEnabled
-                    ? () => _forgotPassword(context)
-                    : null,
+                onPressed: () => _changePassword(context),
               ),
-              SizedBox(height: 20),  // Adjust the spacing here
+              SizedBox(height: 20),
               ElevatedButton.icon(
                 icon: Icon(Icons.qr_code),
                 label: Text('My QR Code'),
                 onPressed: () => _navigateToMyQRCodePage(context),
               ),
-              SizedBox(height: 30),  // Adjust the spacing here
+              SizedBox(height: 30),
               ElevatedButton.icon(
                 icon: Icon(Icons.logout),
                 label: Text('Logout'),

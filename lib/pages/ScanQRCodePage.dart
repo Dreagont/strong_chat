@@ -86,7 +86,7 @@ class _ScanQRCodePageState extends State<ScanQRCodePage> {
                 onPressed: () {
                   Navigator.of(context).pop();
                   _controller
-                      .start(); // Restart the scanner when the dialog is dismissed
+                      .start();
                 },
                 child: Text('Cancel'),
               ),
@@ -108,11 +108,10 @@ class _ScanQRCodePageState extends State<ScanQRCodePage> {
         },
       );
     } else {
-      // Handle case where friend data is not found
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Friend not found!')),
       );
-      _controller.start(); // Restart the scanner if friend data is not found
+      _controller.start();
     }
   }
 
@@ -141,7 +140,7 @@ class _ScanQRCodePageState extends State<ScanQRCodePage> {
             print('Barcode: $barcodeData');
 
             _controller
-                .stop(); // Stop the scanner to prevent multiple detections
+                .stop();
             _showProfileConfirmationDialog(context, barcodeData, image);
           }
         },

@@ -52,7 +52,7 @@ class MessagesPage extends StatelessWidget {
           return Text('Error: ${messageSnapshot.error}');
         }
         if (!messageSnapshot.hasData || messageSnapshot.data!.docs.isEmpty) {
-          return SizedBox.shrink();  // Hide friends with no messages
+          return SizedBox.shrink();
         }
 
         final lastMessageDoc = messageSnapshot.data!.docs.last;
