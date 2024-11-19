@@ -54,6 +54,9 @@ dependencies:
   rxdart: ^0.28.0
   video_player: ^2.5.1
   url_launcher: ^6.1.7
+  awesome_notifications: ^0.7.4+1
+  firebase_messaging: ^15.1.5
+  supabase_flutter: ^2.8.1
 
 dev_dependencies:
   flutter_test:

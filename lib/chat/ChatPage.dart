@@ -5,11 +5,13 @@ import 'package:strong_chat/services/AuthService.dart';
 import 'package:strong_chat/services/FireStoreService.dart';
 import 'package:strong_chat/UI_Widgets/InputBox.dart';
 import 'package:intl/intl.dart';
-import 'package:video_player/video_player.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../services/StorageService.dart';
 import '../utils/Utils.dart';
+import 'MessageSenderService.dart';
+import 'UserInput.dart';
+import 'VideoPlayerWidget.dart';
 
 class ChatPage extends StatefulWidget {
   final String friendName;
@@ -26,12 +28,24 @@ class _ChatPageState extends State<ChatPage> {
   final FireStoreService chatService = FireStoreService();
   final AuthService authService = AuthService();
   final StorageService storageService = StorageService();
+  late final MessageSenderService messageSender;
   FocusNode focusNode = FocusNode();
   ScrollController scrollController = ScrollController();
+  late List<Map<String, dynamic>> messages;
 
   @override
   void initState() {
     super.initState();
+    messages = [];
+    messageSender = MessageSenderService(
+      chatService: chatService,
+      authService: authService,
+      storageService: storageService,
+      friendId: widget.friendId,
+      onMessageAdded: _handleMessageAdded,
+      onMessageSent: goToBot,
+    );
+
     focusNode.addListener(() {
       if (focusNode.hasFocus) {
         Future.delayed(const Duration(milliseconds: 500), () => goToBot());
@@ -41,110 +55,44 @@ class _ChatPageState extends State<ChatPage> {
     Future.delayed(Duration(milliseconds: 500), () => goToBot());
   }
 
-  @override
-  void dispose() {
-    focusNode.dispose();
-    messController.dispose();
-    super.dispose();
-  }
-
   void goToBot() {
     scrollController.animateTo(scrollController.position.maxScrollExtent,
         duration: Duration(milliseconds: 300), curve: Curves.fastOutSlowIn);
   }
 
+
+  void _handleMessageAdded(Map<String, dynamic> message) {
+    setState(() {
+      messages.add(message);
+      messages.sort((a, b) => a['timeStamp'].compareTo(b['timeStamp']));
+    });
+  }
+
   void sendTextMessage() async {
     if (messController.text.isNotEmpty) {
-      await chatService.sendMessage(
-          widget.friendId, messController.text, 'text', "");
+      String text = messController.text;
       messController.clear();
-      goToBot();
+      await messageSender.sendTextMessage(text);
     }
-  }
-
-  void sendImageMessage(BuildContext context) async {
-    final Timestamp timestamp = Timestamp.now();
-    List<String> ids = [authService.getCurrentUserId(), widget.friendId];
-    ids.sort();
-    String chatBoxId = ids.join('_');
-
-    String filePath = 'ChatData/$chatBoxId/$timestamp.jpg';
-    await storageService.uploadImage(
-        timestamp.toString(), 'ChatData/$chatBoxId');
-    String mess = await FirebaseStorage.instance.ref(filePath).getDownloadURL();
-    await chatService.sendMessage(widget.friendId, mess, 'image', "");
-    goToBot();
-  }
-
-  void sendVideoMessage(BuildContext context) async {
-    final Timestamp timestamp = Timestamp.now();
-    List<String> ids = [authService.getCurrentUserId(), widget.friendId];
-    ids.sort();
-    String chatBoxId = ids.join('_');
-
-    await storageService.uploadVideo(
-        timestamp.toString(), 'ChatData/$chatBoxId', chatBoxId, widget.friendId);
-
-    goToBot();
-  }
-
-  void sendFileMessage(BuildContext context) async {
-    final Timestamp timestamp = Timestamp.now();
-    List<String> ids = [authService.getCurrentUserId(), widget.friendId];
-    ids.sort();
-    String chatBoxId = ids.join('_');
-
-    await storageService.uploadFile(
-        timestamp.toString(), 'ChatData/$chatBoxId', chatBoxId, widget.friendId);
-    goToBot();
-  }
-
-  void showMediaOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: Icon(Icons.image),
-                title: Text('Image'),
-                onTap: () {
-                  Navigator.pop(context);
-                  sendImageMessage(context);
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.video_library),
-                title: Text('Video'),
-                onTap: () {
-                  Navigator.pop(context);
-                  sendVideoMessage(context);
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.insert_drive_file),
-                title: Text('File'),
-                onTap: () {
-                  Navigator.pop(context);
-                  sendFileMessage(context);
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(widget.friendName)),
-      body: Column(
-        children: [Expanded(child: MessageList()), UserInput(context)],
-      ),
+      body: Column(children: [
+        Expanded(child: MessageList()),
+        UserInput(
+          messController: messController,
+          focusNode: focusNode,
+          friendId: widget.friendId,
+          onMessageSent: goToBot,
+          sendTextMessage: sendTextMessage,
+          sendImageMessage: messageSender.sendImageMessage,
+          sendVideoMessage: messageSender.sendVideoMessage,
+          sendFileMessage: messageSender.sendFileMessage,
+        ),
+      ]),
     );
   }
 
@@ -167,26 +115,45 @@ class _ChatPageState extends State<ChatPage> {
           return const Center(child: Text("Loading..."));
         }
 
+        if (messages.isEmpty && snapshot.data!.docs.isNotEmpty) {
+          messages = snapshot.data!.docs.map((doc) {
+            Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+            if (data.containsKey('timeStamp')) {
+              return {
+                'message': data['message'],
+                'messType': data['messType'],
+                'timeStamp': data['timeStamp'],
+                'senderId': data['senderId'],
+                'fileName': data['fileName'],
+              };
+            }
+            return null;
+          }).where((element) => element != null).map((element) => element as Map<String, dynamic>).toList();
+
+          messages.sort((a, b) => a['timeStamp'].compareTo(b['timeStamp']));
+        }
+
+        print(messages.last);
+
         return ListView(
           controller: scrollController,
-          children: snapshot.data!.docs.map((doc) {
-            Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+          children: messages.map((data) {
             Timestamp currentTimestamp = data["timeStamp"];
             bool showTimestamp = lastTimestamp == null ||
                 currentTimestamp.toDate().difference(lastTimestamp!.toDate()).inHours > 3;
             lastTimestamp = currentTimestamp;
-
-            return MessBox(doc, showTimestamp);
+            return MessBoxWithData(data, showTimestamp);
           }).toList(),
         );
       },
     );
   }
 
-  Widget MessBox(DocumentSnapshot doc, bool showTimestamp) {
-    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+
+  Widget MessBoxWithData(Map<String, dynamic> data, bool showTimestamp) {
     bool isMyMess = data['senderId'] == authService.getCurrentUserId();
     var alignment = isMyMess ? Alignment.centerRight : Alignment.centerLeft;
+    var messageColor = isMyMess ? Colors.blue : Colors.grey;
 
     return Align(
       alignment: alignment,
@@ -209,7 +176,7 @@ class _ChatPageState extends State<ChatPage> {
             ),
           Container(
             decoration: BoxDecoration(
-              color: isMyMess ? Colors.blue : Colors.grey,
+              color: messageColor,
               borderRadius: BorderRadius.circular(12),
             ),
             padding: EdgeInsets.all(16),
@@ -217,25 +184,25 @@ class _ChatPageState extends State<ChatPage> {
             child: ConstrainedBox(
               constraints: BoxConstraints(maxWidth: 250),
               child: data["messType"] == "image"
-                  ? Image.network(data["message"], fit: BoxFit.cover)
+                  ? Image.network(data["message"] ?? '', fit: BoxFit.cover)
                   : data["messType"] == "video"
-                  ? VideoPlayerWidget(videoUrl: data["message"])
+                  ? VideoPlayerWidget(videoUrl: data["message"] ?? '')
                   : data["messType"] == "file"
                   ? GestureDetector(
-                onTap: () => launchUrl(Uri.parse(data["message"])),
+                onTap: () => launchUrl(Uri.parse(data["message"] ?? '')),
                 child: Row(
                   children: [
                     Icon(Icons.insert_drive_file, color: Colors.white),
                     SizedBox(width: 8),
-                    Expanded(child: Text(data["fileName"], style: TextStyle(color: Colors.white))),
+                    Expanded(child: Text(data["fileName"] ?? '', style: TextStyle(color: Colors.white))),
                     IconButton(
                       icon: Icon(Icons.download, color: Colors.white),
-                      onPressed: () => launchUrl(Uri.parse(data["message"])),
+                      onPressed: () => launchUrl(Uri.parse(data["message"] ?? '')),
                     ),
                   ],
                 ),
               )
-                  : RichText(text: replaceEmoticons(data["message"])),
+                  : RichText(text: replaceEmoticons(data["message"] ?? '')),
             ),
           ),
         ],
@@ -243,70 +210,4 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-  Widget UserInput(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 30.0),
-      child: Row(
-        children: [
-          IconButton(
-            icon: Icon(Icons.attach_file),
-            onPressed: () => showMediaOptions(context),
-          ),
-          Expanded(
-              child: InputBox(
-                hint: "Type your message",
-                controller: messController,
-                focusNode: focusNode,
-              )),
-          IconButton(onPressed: sendTextMessage, icon: Icon(Icons.send))
-        ],
-      ),
-    );
-  }
-}
-
-class VideoPlayerWidget extends StatefulWidget {
-  final String videoUrl;
-
-  VideoPlayerWidget({required this.videoUrl});
-
-  @override
-  _VideoPlayerWidgetState createState() => _VideoPlayerWidgetState();
-}
-
-class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
-  late VideoPlayerController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = VideoPlayerController.network(widget.videoUrl)
-      ..initialize().then((_) {
-        setState(() {});
-      })
-      ..setLooping(true);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return _controller.value.isInitialized
-        ? GestureDetector(
-      onTap: () {
-        setState(() {
-          _controller.value.isPlaying ? _controller.pause() : _controller.play();
-        });
-      },
-      child: AspectRatio(
-        aspectRatio: _controller.value.aspectRatio,
-        child: VideoPlayer(_controller),
-      ),
-    )
-        : Center(child: CircularProgressIndicator());
-  }
 }

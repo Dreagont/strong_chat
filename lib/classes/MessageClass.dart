@@ -7,6 +7,7 @@ class Message{
   final String messType;
   final Timestamp timestamp;
   final String fileName;
+  bool isSynced;
 
   Message({
     required this.senderId,
@@ -14,7 +15,8 @@ class Message{
     required this.message,
     required this.messType,
     required this.timestamp,
-    required this.fileName
+    required this.fileName,
+    this.isSynced = false,
   });
 
   Map<String, dynamic> MessToMap() {

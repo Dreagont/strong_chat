@@ -1,5 +1,9 @@
+import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../services/AuthService.dart';
+import '../services/FireStoreService.dart';
 import 'ContactsPage.dart';
 import 'MessagesPage.dart';
 import 'ProfilePage.dart';
@@ -8,12 +12,30 @@ import 'ScanQRCodePage.dart';
 class HomeScreen extends StatefulWidget {
   final String id;
   HomeScreen({required this.id});
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  final FireStoreService fireStoreService = FireStoreService();
+  final AuthService authService = AuthService();
+
+  @override
+  void initState() {
+    super.initState();
+    final String currentUserId = widget.id;
+
+    // Request notification permission
+    AwesomeNotifications().isNotificationAllowed().then((isAllowed) {
+      if (!isAllowed) {
+        AwesomeNotifications().requestPermissionToSendNotifications();
+      }
+    });
+
+    fireStoreService.listenForNewMessages(currentUserId);
+  }
 
   static const List<String> _titles = <String>[
     'Messages',
