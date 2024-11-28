@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../services/AuthService.dart';
 import '../services/FireStoreService.dart';
@@ -49,66 +51,76 @@ class MessageSenderService {
   }
 
   Future<void> sendImageMessage() async {
-    final Timestamp timestamp = Timestamp.now();
-    String chatBoxId = _getChatBoxId();
-    String filePath = 'ChatData/$chatBoxId/$timestamp.jpg';
+    XFile? pickedImage = await storageService.pickImage();
+    if (pickedImage != null) {
+      final Timestamp timestamp = Timestamp.now();
+      String chatBoxId = _getChatBoxId();
+      String filePath = 'ChatData/$chatBoxId/$timestamp.jpg';
 
-    Map<String, dynamic> tempMessage = {
-      'message': '',
-      'messType': 'image',
-      'timeStamp': timestamp,
-      'senderId': authService.getCurrentUserId(),
-      'fileName': ''
-    };
+      Map<String, dynamic> tempMessage = {
+        'message': '',
+        'messType': 'image',
+        'timeStamp': timestamp,
+        'senderId': authService.getCurrentUserId(),
+        'fileName': ''
+      };
 
-    onMessageAdded(tempMessage);
-    await storageService.uploadImage(timestamp.toString(), 'ChatData/$chatBoxId');
-    String mess = await FirebaseStorage.instance.ref(filePath).getDownloadURL();
-    await chatService.sendMessage(friendId, mess, 'image', "");
-    onMessageSent();
+      onMessageAdded(tempMessage);
+      await storageService.uploadImage(pickedImage ,timestamp.toString(), 'ChatData/$chatBoxId');
+      String mess = await FirebaseStorage.instance.ref(filePath).getDownloadURL();
+      await chatService.sendMessage(friendId, mess, 'image', "");
+      onMessageSent();
+    }
   }
 
   Future<void> sendVideoMessage() async {
-    final Timestamp timestamp = Timestamp.now();
-    String chatBoxId = _getChatBoxId();
+    XFile? pickedVideo = await storageService.pickVideo();
+    if (pickedVideo != null) {
+      final Timestamp timestamp = Timestamp.now();
+      String chatBoxId = _getChatBoxId();
 
-    Map<String, dynamic> tempMessage = {
-      'message': '',
-      'messType': 'video',
-      'timeStamp': timestamp,
-      'senderId': authService.getCurrentUserId(),
-      'fileName': ''
-    };
+      Map<String, dynamic> tempMessage = {
+        'message': '',
+        'messType': 'video',
+        'timeStamp': timestamp,
+        'senderId': authService.getCurrentUserId(),
+        'fileName': ''
+      };
 
-    onMessageAdded(tempMessage);
-    await storageService.uploadVideo(
-        timestamp.toString(),
-        'ChatData/$chatBoxId',
-        chatBoxId,
-        friendId
-    );
-    onMessageSent();
+      onMessageAdded(tempMessage);
+      await storageService.uploadVideo(pickedVideo,
+          timestamp.toString(),
+          'ChatData/$chatBoxId',
+          chatBoxId,
+          friendId
+      );
+      onMessageSent();
+    }
   }
 
   Future<void> sendFileMessage() async {
-    final Timestamp timestamp = Timestamp.now();
-    String chatBoxId = _getChatBoxId();
+    FilePickerResult? result = await storageService.pickFile();
+    if (result != null) {
+      final Timestamp timestamp = Timestamp.now();
+      String chatBoxId = _getChatBoxId();
 
-    Map<String, dynamic> tempMessage = {
-      'message': '',
-      'messType': 'file',
-      'timeStamp': timestamp,
-      'senderId': authService.getCurrentUserId(),
-      'fileName': 'sending file....'
-    };
+      Map<String, dynamic> tempMessage = {
+        'message': '',
+        'messType': 'file',
+        'timeStamp': timestamp,
+        'senderId': authService.getCurrentUserId(),
+        'fileName': 'sending file....'
+      };
 
-    onMessageAdded(tempMessage);
-    await storageService.uploadFile(
-        timestamp.toString(),
-        'ChatData/$chatBoxId',
-        chatBoxId,
-        friendId
-    );
-    onMessageSent();
+      onMessageAdded(tempMessage);
+      await storageService.uploadFile(result,
+          timestamp.toString(),
+          'ChatData/$chatBoxId',
+          chatBoxId,
+          friendId
+      );
+      onMessageSent();
+    }
+
   }
 }

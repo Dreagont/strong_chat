@@ -60,7 +60,6 @@ class _ChatPageState extends State<ChatPage> {
       }
     });
   }
-
   void _setupMessageStream() {
     final userId = authService.getCurrentUserId();
     _messageSubscription = chatService
@@ -85,16 +84,15 @@ class _ChatPageState extends State<ChatPage> {
           if (displayedMessages.isEmpty) {
             displayedMessages = allMessages.take(messagesPerPage).toList();
           } else {
-            var newMessages = allMessages
-                .take(messagesPerPage)
-                .where((message) => !displayedMessages
+            // Find the newest message that wasn't in displayedMessages
+            var newMessages = allMessages.where((message) => !displayedMessages
                 .any((displayed) =>
             displayed['timeStamp'] == message['timeStamp'] &&
                 displayed['message'] == message['message']))
                 .toList();
 
             if (newMessages.isNotEmpty) {
-              displayedMessages = allMessages.take(messagesPerPage).toList();
+              displayedMessages.insertAll(0, newMessages);
             }
           }
         });
@@ -103,24 +101,17 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   void _scrollListener() {
-    if (scrollController.hasClients &&
-        scrollController.position.pixels >= scrollController.position.maxScrollExtent &&
-        !isLoadingMore &&
-        displayedMessages.length < allMessages.length) {
+    if (scrollController.position.pixels <= 100 && !isLoadingMore) {
       _loadMoreMessages();
     }
   }
 
-  void _loadMoreMessages() async {
+  void _loadMoreMessages() {
     if (isLoadingMore || displayedMessages.length >= allMessages.length) return;
 
     setState(() {
       isLoadingMore = true;
-    });
 
-    await Future.delayed(Duration(milliseconds: 500));
-
-    setState(() {
       int startIndex = displayedMessages.length;
       int endIndex = startIndex + messagesPerPage;
       if (endIndex > allMessages.length) {
@@ -128,34 +119,17 @@ class _ChatPageState extends State<ChatPage> {
       }
 
       displayedMessages.addAll(allMessages.sublist(startIndex, endIndex));
+
       isLoadingMore = false;
     });
   }
 
   void _handleMessageAdded(Map<String, dynamic> message) {
     setState(() {
-      displayedMessages.add(message);
-
-      if (displayedMessages.length > messagesPerPage) {
-        displayedMessages = displayedMessages.sublist(displayedMessages.length - messagesPerPage);
-      }
-
-      if (allMessages.isNotEmpty) {
-        List<Map<String, dynamic>> latestOnlineMessages =
-        allMessages.take(messagesPerPage).toList();
-
-        bool areMessagesIdentical = true;
-        for (int i = 0; i < displayedMessages.length; i++) {
-          if (displayedMessages[i]['timeStamp'] != latestOnlineMessages[i]['timeStamp'] ||
-              displayedMessages[i]['message'] != latestOnlineMessages[i]['message']) {
-            areMessagesIdentical = false;
-            break;
-          }
-        }
-
-        if (!areMessagesIdentical) {
-          displayedMessages = latestOnlineMessages;
-        }
+      if (!displayedMessages.any((m) =>
+      m['timeStamp'] == message['timeStamp'] &&
+          m['message'] == message['message'])) {
+        displayedMessages.insert(0, message);
       }
     });
   }
@@ -176,6 +150,7 @@ class _ChatPageState extends State<ChatPage> {
     if (messController.text.isNotEmpty) {
       String text = messController.text;
       messController.clear();
+      goToBot();
       await messageSender.sendTextMessage(text);
     }
   }
@@ -217,16 +192,18 @@ class _ChatPageState extends State<ChatPage> {
     return ListView.builder(
       controller: scrollController,
       reverse: true,
-      itemCount: displayedMessages.length + (displayedMessages.length < allMessages.length ? 1 : 0),
+      itemCount: displayedMessages.length + 1,
       itemBuilder: (context, index) {
         if (index == displayedMessages.length) {
-          return Container(
+          return displayedMessages.length < allMessages.length
+              ? Container(
             padding: EdgeInsets.all(16),
             alignment: Alignment.center,
             child: isLoadingMore
                 ? CircularProgressIndicator()
                 : SizedBox.shrink(),
-          );
+          )
+              : SizedBox.shrink();
         }
 
         Map<String, dynamic> data = displayedMessages[index];
@@ -305,7 +282,6 @@ class _ChatPageState extends State<ChatPage> {
       ),
     );
   }
-
   @override
   void dispose() {
     _messageSubscription?.cancel();
