@@ -4,8 +4,8 @@ import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:strong_chat/services/FireStoreService.dart';
 
+import '../../services/FriendService.dart';
 import '../contacts/UserProfilePage.dart';
-import '../services/FriendService.dart';
 
 class ScanQRCodePage extends StatefulWidget {
   @override

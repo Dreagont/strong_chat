@@ -2,17 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class ChatTile extends StatelessWidget {
+  final String messType;
   final String name;
   final String avatar;
   final String lastMessage;
+  final String senderPrefix;
   final DateTime timestamp;
   final void Function()? onTap;
 
   const ChatTile({
     super.key,
+    required this.messType,
     required this.name,
     required this.avatar,
     required this.lastMessage,
+    required this.senderPrefix,
     required this.timestamp,
     this.onTap,
   });
@@ -20,6 +24,31 @@ class ChatTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     String formattedTime = DateFormat('HH:mm').format(timestamp);
+
+    String displayMessage;
+    TextStyle messageStyle = TextStyle(fontSize: 14, color: Colors.grey[600]);
+
+    switch (messType) {
+      case 'text':
+        displayMessage = lastMessage;
+        break;
+      case 'image':
+        displayMessage = '[Sent an image]';
+        messageStyle = messageStyle.copyWith(fontStyle: FontStyle.italic);
+        break;
+      case 'video':
+        displayMessage = '[Sent a video]';
+        messageStyle = messageStyle.copyWith(fontStyle: FontStyle.italic);
+        break;
+      case 'file':
+        displayMessage = '[Sent a file]';
+        messageStyle = messageStyle.copyWith(fontStyle: FontStyle.italic);
+        break;
+      default:
+        displayMessage = '[Unknown message type]';
+        messageStyle = messageStyle.copyWith(fontStyle: FontStyle.italic);
+        break;
+    }
 
     return GestureDetector(
       onTap: onTap,
@@ -56,8 +85,8 @@ class ChatTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 5),
                   Text(
-                    lastMessage,
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    "$senderPrefix$displayMessage",
+                    style: messageStyle,
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
                   ),

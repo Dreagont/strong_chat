@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:strong_chat/services/FriendService.dart';
+import '../../chat/ChatPage.dart';
 import '../../services/FireStoreService.dart';
-import '../chat/ChatPage.dart';
 
 class UserProfilePage extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -116,6 +116,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                               builder: (context) => ChatPage(
                                 friendName: widget.userData["name"],
                                 friendId: widget.userData["id"],
+                                nickname: widget.userData["name"],
                               ),
                             ),
                           );

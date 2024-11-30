@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:strong_chat/services/FriendService.dart';
-import '../UI_Widgets/UserTile.dart';
-import '../contacts/UserProfilePage.dart';
-import '../services/AuthService.dart';
-import '../services/FireStoreService.dart';
+import '../../UI_Widgets/UserTile.dart';
+import '../../services/AuthService.dart';
+import '../../services/FireStoreService.dart';
+import 'UserProfilePage.dart';
 
 class ContactsPage extends StatefulWidget {
   @override

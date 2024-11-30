@@ -4,9 +4,9 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../services/AuthService.dart';
-import '../services/FireStoreService.dart';
-import '../services/StorageService.dart';
+import '../../services/AuthService.dart';
+import '../../services/FireStoreService.dart';
+import '../../services/StorageService.dart';
 
 
 class MessageSenderService {
@@ -57,19 +57,31 @@ class MessageSenderService {
       String chatBoxId = _getChatBoxId();
       String filePath = 'ChatData/$chatBoxId/$timestamp.jpg';
 
-      Map<String, dynamic> tempMessage = {
-        'message': '',
-        'messType': 'image',
+      Map<String, dynamic> holderMessage = {
+        'message': pickedImage.path,
+        'messType': 'holder',
         'timeStamp': timestamp,
         'senderId': authService.getCurrentUserId(),
-        'fileName': ''
+        'fileName': pickedImage.name
       };
 
-      onMessageAdded(tempMessage);
-      await storageService.uploadImage(pickedImage ,timestamp.toString(), 'ChatData/$chatBoxId');
-      String mess = await FirebaseStorage.instance.ref(filePath).getDownloadURL();
-      await chatService.sendMessage(friendId, mess, 'image', "");
-      onMessageSent();
+      onMessageAdded(holderMessage);
+
+      try {
+        await storageService.uploadImage(
+            pickedImage,
+            timestamp.toString(),
+            'ChatData/$chatBoxId'
+        );
+
+        String downloadUrl = await FirebaseStorage.instance.ref(filePath).getDownloadURL();
+
+        await chatService.sendMessage(friendId, downloadUrl, 'image', "");
+
+        onMessageSent();
+      } catch (e) {
+        print('Image upload error: $e');
+      }
     }
   }
 
@@ -80,11 +92,11 @@ class MessageSenderService {
       String chatBoxId = _getChatBoxId();
 
       Map<String, dynamic> tempMessage = {
-        'message': '',
-        'messType': 'video',
+        'message': pickedVideo.path,
+        'messType': 'VHolder',
         'timeStamp': timestamp,
         'senderId': authService.getCurrentUserId(),
-        'fileName': ''
+        'fileName': pickedVideo.name
       };
 
       onMessageAdded(tempMessage);
@@ -112,7 +124,7 @@ class MessageSenderService {
         'fileName': 'sending file....'
       };
 
-      onMessageAdded(tempMessage);
+      //onMessageAdded(tempMessage);
       await storageService.uploadFile(result,
           timestamp.toString(),
           'ChatData/$chatBoxId',

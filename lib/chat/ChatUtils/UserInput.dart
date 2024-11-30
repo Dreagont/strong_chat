@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
-import '../UI_Widgets/InputBox.dart';
-import '../services/AuthService.dart';
-import '../services/FireStoreService.dart';
-import '../services/StorageService.dart';
+import '../../UI_Widgets/InputBox.dart';
+import '../../services/AuthService.dart';
+import '../../services/FireStoreService.dart';
+import '../../services/StorageService.dart';
 
 class UserInput extends StatelessWidget {
   final TextEditingController messController;

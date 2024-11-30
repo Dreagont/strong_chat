@@ -4,7 +4,7 @@ import 'package:strong_chat/services/AuthService.dart';
 import 'package:strong_chat/services/FireStoreService.dart';
 import 'package:strong_chat/services/StorageService.dart';
 import '../auth/LoginPage.dart';
-import 'MyQRCodePage.dart';
+import 'PagesUtils/MyQRCodePage.dart';
 
 class ProfilePage extends StatefulWidget {
   @override

@@ -4,10 +4,40 @@ import 'package:strong_chat/services/AuthService.dart';
 import 'package:strong_chat/services/FireStoreService.dart';
 import '../chat/ChatPage.dart';
 import '../UI_Widgets/ChatTile.dart';
+import 'PagesUtils/MessagesPageHelper.dart';
 
-class MessagesPage extends StatelessWidget {
+class MessagesPage extends StatefulWidget {
+  @override
+  _MessagesPageState createState() => _MessagesPageState();
+}
+
+class _MessagesPageState extends State<MessagesPage> {
   final FireStoreService fireStoreService = FireStoreService();
   final AuthService authService = AuthService();
+  List<Map<String, dynamic>> friends = [];
+  Stream<List<Map<String, dynamic>>>? chatStream;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchChats();
+  }
+
+  void fetchChats() {
+    chatStream = fireStoreService.getChatsStream(authService.getCurrentUserId());
+    chatStream?.listen((newFriends) {
+      if (!mounted) return;
+      setState(() {
+        friends = newFriends
+            .where((friend) => friend['isHide'] != true)
+            .toList()
+          ..sort((a, b) => (b['lastMessTime'] ?? 0).compareTo(a['lastMessTime'] ?? 0));
+      });
+    }, onError: (error) {
+      print("Error fetching chats: $error");
+    });
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -17,68 +47,137 @@ class MessagesPage extends StatelessWidget {
   }
 
   Widget userList() {
-    return StreamBuilder<List<Map<String, dynamic>>>(
-      stream: fireStoreService.getChatsStream(authService.getCurrentUserId()),
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          print('StreamBuilder Error: ${snapshot.error}');
-          return const Center(child: Text("Error"));
-        }
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final friends = snapshot.data;
-        if (friends == null || friends.isEmpty) {
-          return const Center(child: Text("No Friends Found"));
-        }
-
-        return ListView(
-          children: friends.map<Widget>((friendData) => friendListItem(friendData, context)).toList(),
-        );
-      },
+    if (friends.isEmpty) {
+      return const Center(child: Text("No Friends Found"));
+    }
+    return ListView(
+      children: friends.map<Widget>((friendData) => friendListItem(friendData, context)).toList(),
     );
   }
 
   Widget friendListItem(Map<String, dynamic> friendData, BuildContext context) {
     final String currentUserId = authService.getCurrentUserId();
 
-    return StreamBuilder<QuerySnapshot>(
-      stream: fireStoreService.getMessage(currentUserId, friendData['id']),
-      builder: (context, messageSnapshot) {
-        if (messageSnapshot.connectionState == ConnectionState.waiting) {
+    return StreamBuilder<String?>(
+      stream: fireStoreService.getNicknameStream(currentUserId, friendData["id"]),
+      builder: (context, nicknameSnapshot) {
+        if (nicknameSnapshot.connectionState == ConnectionState.waiting) {
           return Center(child: CircularProgressIndicator());
         }
-        if (messageSnapshot.hasError) {
-          return Text('Error: ${messageSnapshot.error}');
-        }
-        if (!messageSnapshot.hasData || messageSnapshot.data!.docs.isEmpty) {
-          return SizedBox.shrink();
+        if (nicknameSnapshot.hasError) {
+          return Text('Error: ${nicknameSnapshot.error}');
         }
 
-        final lastMessageDoc = messageSnapshot.data!.docs.last;
-        final lastMessage = lastMessageDoc['message'];
-        final senderId = lastMessageDoc['senderId'];
-        final timestamp = (lastMessageDoc['timeStamp'] as Timestamp).toDate();
+        final nickname = nicknameSnapshot.data ?? friendData["name"];
 
-        final senderPrefix = senderId == currentUserId ? 'Me: ' : '${friendData["name"]}: ';
-        final formattedMessage = '$senderPrefix$lastMessage';
-
-        return ChatTile(
-          name: friendData["name"],
-          avatar: friendData["avatar"],
-          lastMessage: formattedMessage,
-          timestamp: timestamp,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ChatPage(
-                  friendName: friendData["name"],
-                  friendId: friendData["id"],
-                ),
-              ),
-            );
+        return createChatTile(
+          context: context,
+          friendData: friendData,
+          currentUserId: currentUserId,
+          fireStoreService: fireStoreService,
+          nickname: nickname,
+          onOptionsSelected: (option, data) {
+            if (option == ChatOption.hide) {
+              _hideChatOptimistically(context, data['id']);
+            } else if (option == ChatOption.editNickname) {
+              _showChangeNicknameDialog(context, data);
+            } else if (option == ChatOption.reset) {
+              _resetNickname(context, data['id']);
+            } else if (option == ChatOption.toggleBlock) {
+              _toggleBlockUser(context, data['id']);
+            }
           },
+        );
+      },
+    );
+  }
+
+
+  void _hideChatOptimistically(BuildContext context, String friendId) {
+    _updateLocalChatState(friendId);
+    fireStoreService.hideChatForUser(authService.getCurrentUserId(), friendId).catchError((error) {
+      _showErrorSnackbar(context, "Failed to hide chat");
+      fetchChats();
+    });
+  }
+
+  void _updateLocalChatState(String friendId) {
+    setState(() {
+      friends.removeWhere((friend) => friend['id'] == friendId);
+    });
+  }
+
+  void _showErrorSnackbar(BuildContext context, String message) {
+    final snackBar = SnackBar(content: Text(message));
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
+  Future<void> _changeNickname(String friendId, String newNickname) async {
+    String currentUserId = authService.getCurrentUserId();
+    await fireStoreService.editNicknameForFriend(currentUserId, friendId, newNickname);
+  }
+
+  Future<void> _resetNickname(BuildContext context, String friendId) async {
+    String currentUserId = authService.getCurrentUserId();
+    await fireStoreService.resetNicknameToDefault(currentUserId, friendId);
+    _showSuccessSnackbar(context, "Nickname reset to default");
+  }
+
+  Future<void> _toggleBlockUser(BuildContext context, String friendId) async {
+    String currentUserId = authService.getCurrentUserId();
+    await fireStoreService.blockActionUserForFriend(currentUserId, friendId);
+    _showSuccessSnackbar(context, "Done");
+  }
+
+  void _showSuccessSnackbar(BuildContext context, String message) {
+    final snackBar = SnackBar(content: Text(message));
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
+  void _showChangeNicknameDialog(BuildContext context, Map<String, dynamic> friendData) {
+    final nicknameController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text("Change Nickname"),
+              IconButton(
+                icon: Icon(Icons.restore),
+                onPressed: () {
+                  Navigator.pop(context);
+                  _resetNickname(context, friendData['id']);
+                },
+                tooltip: "Reset to default nickname",
+              ),
+            ],
+          ),
+          content: TextField(
+            controller: nicknameController,
+            decoration: InputDecoration(
+              hintText: "Enter new nickname",
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () {
+                String newNickname = nicknameController.text.trim();
+                if (newNickname.isNotEmpty) {
+                  _changeNickname(friendData['id'], newNickname);
+                }
+                Navigator.pop(context);
+              },
+              child: Text("Save"),
+            ),
+          ],
         );
       },
     );

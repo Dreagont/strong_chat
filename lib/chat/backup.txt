@@ -204,8 +204,6 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   Widget build(BuildContext context) {
-    final userId = authService.getCurrentUserId();
-
     return Scaffold(
       appBar: AppBar(title: Text(widget.friendName)),
       body: Column(
@@ -219,66 +217,29 @@ class _ChatPageState extends State<ChatPage> {
               formatTimestamp: formatTimestamp,
             ),
           ),
-          StreamBuilder<bool>(
-            stream: chatService.isBlockedHimStream(userId, widget.friendId),
-            builder: (context, snapshot) {
-              bool amIBlockedThisUser = snapshot.data ?? false;
-
-              if (amIBlockedThisUser) {
-                return Container(
-                  padding: const EdgeInsets.all(16.0),
-                  color: Colors.yellow[100],
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "You have blocked this user",
-                        style: TextStyle(
-                          color: Colors.black87,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          chatService.blockActionUserForFriend(userId, widget.friendId);
-                        },
-                        child: Text("Unblock"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              // If not blocked by current user, show input or blocked message
-              if (!isBlocked) {
-                return UserInput(
-                  messController: messController,
-                  focusNode: focusNode,
-                  friendId: widget.friendId,
-                  onMessageSent: goToBot,
-                  sendTextMessage: sendTextMessage,
-                  sendImageMessage: messageSender.sendImageMessage,
-                  sendVideoMessage: messageSender.sendVideoMessage,
-                  sendFileMessage: messageSender.sendFileMessage,
-                );
-              } else {
-                return Container(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Text(
-                    "You have been blocked by your friend and cannot send messages.",
-                    style: TextStyle(
-                      color: Colors.red[900],
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                );
-              }
-            },
-          ),
+          if (!isBlocked)
+            UserInput(
+              messController: messController,
+              focusNode: focusNode,
+              friendId: widget.friendId,
+              onMessageSent: goToBot,
+              sendTextMessage: sendTextMessage,
+              sendImageMessage: messageSender.sendImageMessage,
+              sendVideoMessage: messageSender.sendVideoMessage,
+              sendFileMessage: messageSender.sendFileMessage,
+            ),
+          if (isBlocked)
+            Container(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                "You have been blocked by your friend and cannot send messages.",
+                style: TextStyle(
+                  color: Colors.red[900],
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          if me block this user display box to unblock
         ],
       ),
     );

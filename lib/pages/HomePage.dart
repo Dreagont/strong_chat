@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 
 import '../services/AuthService.dart';
 import '../services/FireStoreService.dart';
-import 'ContactsPage.dart';
+import 'contacts/ContactsPage.dart';
 import 'MessagesPage.dart';
 import 'ProfilePage.dart';
-import 'ScanQRCodePage.dart';
+import 'PagesUtils/ScanQRCodePage.dart';
 
 class HomeScreen extends StatefulWidget {
   final String id;
