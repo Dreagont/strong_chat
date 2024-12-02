@@ -62,17 +62,47 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _addFriend() {
+    // Handle add friend action here
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('${_titles[_selectedIndex]} - ${widget.id}'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.qr_code_scanner),
-            onPressed: _navigateToScanQRCode,
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(kToolbarHeight),
+        child: Container(
+          color: Colors.grey[900], // Set search bar background to grey[900]
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          child: SafeArea(
+            child: Row(
+              children: <Widget>[
+                SizedBox(width: 10), // Increase width
+                Icon(Icons.search_sharp, color: Colors.white, size: 30), // Increase size of search icon
+                SizedBox(width: 15), // Increase width
+                Expanded(
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Tìm kiếm',
+                      border: InputBorder.none,
+                      hintStyle: TextStyle(color: Colors.white60, fontSize: 18), // Increase font size
+                    ),
+                    style: TextStyle(color: Colors.white, fontSize: 18), // Increase font size
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.qr_code_scanner_outlined, color: Colors.white, size: 30), // Increase size of QR code scanner icon
+                  onPressed: _navigateToScanQRCode,
+                ),
+                if (_selectedIndex == 0)
+                  IconButton(
+                    icon: Icon(Icons.add, color: Colors.white, size: 30), // Add friend icon
+                    onPressed: _addFriend,
+                  ),
+              ],
+            ),
           ),
-        ],
+        ),
       ),
       body: IndexedStack(
         index: _selectedIndex,

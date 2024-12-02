@@ -207,7 +207,7 @@ class _ChatPageState extends State<ChatPage> {
     final userId = authService.getCurrentUserId();
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.friendName)),
+      appBar: AppBar(title: Text(widget.nickname)),
       body: Column(
         children: [
           Expanded(

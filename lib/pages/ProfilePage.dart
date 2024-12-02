@@ -66,7 +66,7 @@ class _ProfilePageState extends State<ProfilePage> {
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => LoginPage()),
-        (route) => false,
+            (route) => false,
       );
     }
   }
@@ -228,7 +228,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void _editName() async {
     final TextEditingController nameController =
-        TextEditingController(text: _userName);
+    TextEditingController(text: _userName);
 
     final newName = await showDialog<String>(
       context: context,
@@ -279,71 +279,96 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
+      body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.fromLTRB(0, 0.0, 0, 8.0),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Stack(
-                children: [
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundImage: _avatarUrl != null
-                        ? NetworkImage(_avatarUrl!)
-                        : AssetImage('assets/loading.png') as ImageProvider,
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: GestureDetector(
-                      onTap: _editProfilePicture,
-                      child: CircleAvatar(
-                        backgroundColor: Colors.blue,
-                        radius: 16,
-                        child: Icon(Icons.edit, size: 16, color: Colors.white),
-                      ),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget> [
+              Container(
+                color: Colors.grey[850], // Slightly lighter black background
+                width: double.infinity, // Full width
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  children: [
+                    Stack(
+                      children: [
+                        CircleAvatar(
+                          radius: 30,
+                          backgroundImage: _avatarUrl != null
+                              ? NetworkImage(_avatarUrl!)
+                              : AssetImage('assets/loading.png') as ImageProvider,
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: GestureDetector(
+                            onTap: _editProfilePicture,
+                            child: CircleAvatar(
+                              backgroundColor: Colors.blue,
+                              radius: 10,
+                              child: Icon(Icons.edit, size: 14, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                    SizedBox(width: 8),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              _userName,
+                              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                            ),
+                            SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: _editName,
+                              child: Icon(Icons.edit, size: 20, color: Colors.blue),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          _userEmail,
+                          style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                        ),
+                      ],
+                    )
+                  ],
+                ),
               ),
-              SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    _userName,
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: _editName,
-                    child: Icon(Icons.edit, size: 20, color: Colors.blue),
-                  ),
-                ],
-              ),
-              SizedBox(height: 8),
-              Text(
-                _userEmail,
-                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-              ),
-              SizedBox(height: 30),
-              ElevatedButton.icon(
-                icon: Icon(Icons.lock_reset),
-                label: Text('Change Password'),
-                onPressed: () => _changePassword(context),
-              ),
-              SizedBox(height: 20),
-              ElevatedButton.icon(
-                icon: Icon(Icons.qr_code),
-                label: Text('My QR Code'),
-                onPressed: () => _navigateToMyQRCodePage(context),
-              ),
-              SizedBox(height: 30),
-              ElevatedButton.icon(
-                icon: Icon(Icons.logout),
-                label: Text('Logout'),
-                onPressed: () => _logout(context),
+              SizedBox(height: 10),
+              Container(
+                color: Colors.grey[850], // Slightly lighter black background for entire section
+                width: double.infinity, // Full width
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                    children: [
+                      _buildSection(
+                          context,
+                          title: 'Change Password',
+                          icon: Icons.lock_reset,
+                          onTap: () => _changePassword(context),
+                          showDivider: true
+                      ),
+                      _buildSection(
+                          context,
+                          title: 'My QR Code',
+                          icon: Icons.qr_code,
+                          onTap: () => _navigateToMyQRCodePage(context),
+                          showDivider: true
+                      ),
+                      _buildSection(
+                          context,
+                          title: 'Logout',
+                          icon: Icons.logout,
+                          onTap: () => _logout(context),
+                          showDivider: false
+                      )
+                    ]
+                ),
               ),
             ],
           ),
@@ -351,4 +376,47 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
+  Widget _buildSection(BuildContext context, {required String title, required IconData icon, required VoidCallback onTap, required bool showDivider }) {
+    return Column(
+      children: [
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
+            color: Colors.transparent, // Transparent to let the parent container's color show through
+            width: double.infinity, // Full width
+            padding: const EdgeInsets.fromLTRB(0, 16, 8, 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(icon, size: 30, color: Colors.lightBlue),
+                    SizedBox(width: 10),
+                    Text(
+                      title,
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                Icon(Icons.arrow_forward_ios_sharp, size: 15),
+              ],
+            ),
+          ),
+        ),
+        if (showDivider) ...[
+          SizedBox(height: 5),
+          Row(
+            children: [
+              SizedBox(width: 40), // Adjust this width to match the icon's width plus margin
+              Expanded(
+                child: Divider(thickness: 1.0, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+          SizedBox(height: 5),
+        ],
+      ],
+    );
+  }
+
 }

@@ -23,7 +23,7 @@ class ChatTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String formattedTime = DateFormat('HH:mm').format(timestamp);
+    String formattedTime = formatTime(timestamp);
 
     String displayMessage;
     TextStyle messageStyle = TextStyle(fontSize: 14, color: Colors.grey[600]);
@@ -52,55 +52,55 @@ class ChatTile extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.5),
-              spreadRadius: 1,
-              blurRadius: 5,
-              offset: Offset(0, 3),
-            ),
-          ],
-        ),
-        margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-        padding: const EdgeInsets.all(10),
-        child: Row(
-          children: [
-            CircleAvatar(
+      child: Column(
+        children: [
+          ListTile(
+            contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0), // Add spacing inside ListTile
+            leading: CircleAvatar(
               backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
-              radius: 30,
+              radius: 25,
               child: avatar.isEmpty ? const Icon(Icons.person, size: 30) : null,
             ),
-            const SizedBox(width: 15),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    "$senderPrefix$displayMessage",
-                    style: messageStyle,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-                ],
-              ),
+            title: Text(
+              name,
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(width: 10),
-            Text(
+            subtitle: Text(
+              "$senderPrefix$displayMessage",
+              style: messageStyle,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
+            trailing: Text(
               formattedTime,
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              style: TextStyle(color: Colors.grey[600]),
             ),
-          ],
-        ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(left: 85), // Adjust this value as needed to align with the text start
+            child: Divider(thickness: 1, color: Colors.grey[900], height: 1), // Set divider color to grey[900]
+          ),
+        ],
       ),
     );
+  }
+
+  String formatTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inMinutes < 1) {
+      return 'Just now';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes} min${difference.inMinutes > 1 ? 's' : ''}';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours} hour${difference.inHours > 1 ? 's' : ''}';
+    } else if (difference.inDays < 7) {
+      return DateFormat('EEE').format(dateTime); // Day of the week (Mon, Tue, Wed, ...)
+    } else if (now.year == dateTime.year) {
+      return DateFormat('dd MMM').format(dateTime); // day month
+    } else {
+      return DateFormat('dd MMM yyyy').format(dateTime); // day month year
+    }
   }
 }

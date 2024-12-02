@@ -106,6 +106,13 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: AuthGate(),
       debugShowCheckedModeBanner: false,
+      theme: ThemeData.dark().copyWith(
+        primaryColor: Colors.teal,
+        scaffoldBackgroundColor: Colors.black,
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.teal,
+        ),
+      ),
     );
   }
 }

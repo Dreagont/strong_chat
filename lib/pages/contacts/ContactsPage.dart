@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:strong_chat/services/FriendService.dart';
 import '../../UI_Widgets/UserTile.dart';
+import '../contacts/UserProfilePage.dart';
 import '../../services/AuthService.dart';
 import '../../services/FireStoreService.dart';
-import 'UserProfilePage.dart';
 
 class ContactsPage extends StatefulWidget {
   @override
@@ -37,7 +37,6 @@ class _ContactsPageState extends State<ContactsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Contacts")),
       body: Column(
         children: [
           Padding(
@@ -97,16 +96,112 @@ class _ContactsPageState extends State<ContactsPage> {
         }).toList();
 
         return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (filteredFriends.isNotEmpty)
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text("Friends", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                ),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                    'Friends (${filteredFriends.length})',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               ),
-            ...filteredFriends.map((friendData) => userListItem(friendData, context)).toList(),
+            ...filteredFriends.map((friendData) => userListItem2(friendData, context)).toList(),
           ],
+        );
+      },
+    );
+  }
+
+  Widget userListItem2(Map<String, dynamic> userData, BuildContext context) {
+    return FutureBuilder<bool>(
+      future: friendService.checkIfFriends(authService.getCurrentUserId(), userData["id"]),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Text('Error: ${snapshot.error}');
+        }
+
+        var isFriend = snapshot.data ?? false;
+
+        return FutureBuilder<bool>(
+          future: friendService.checkReceivedRequest(userData["id"], authService.getCurrentUserId()),
+          builder: (context, requestSnapshot) {
+            if (requestSnapshot.connectionState == ConnectionState.waiting) {
+              return Center(child: CircularProgressIndicator());
+            }
+
+            if (requestSnapshot.hasError) {
+              return Text('Error: ${requestSnapshot.error}');
+            }
+
+            var hasReceivedRequest = requestSnapshot.data ?? false;
+
+            return FutureBuilder<bool>(
+              future: friendService.checkPendingRequest(authService.getCurrentUserId(), userData["id"]),
+              builder: (context, pendingSnapshot) {
+                if (pendingSnapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                }
+
+                if (pendingSnapshot.hasError) {
+                  return Text('Error: ${pendingSnapshot.error}');
+                }
+
+                var hasSentRequest = pendingSnapshot.data ?? false;
+                isFriend = isFriend || hasReceivedRequest;
+
+                return ListTile(
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0), // Add spacing inside ListTile
+                  leading: Stack(
+                    children: [
+                      CircleAvatar(
+                        backgroundImage: NetworkImage(userData['avatar']),
+                        radius: 30,
+                      ),
+                    ],
+                  ),
+                  title: Text(
+                    userData['name'],
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.call_outlined),
+                        onPressed: () {
+                          // Handle voice call action here
+                        },
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.videocam_outlined),
+                        onPressed: () {
+                          // Handle video call action here
+                        },
+                      ),
+                    ],
+                  ),
+                  onTap: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => UserProfilePage(
+                          userData: userData,
+                          relationshipStatus: isFriend ? 'remove' : hasSentRequest ? 'cancel' : hasReceivedRequest ? 'accept' : 'add',
+                        ),
+                      ),
+                    );
+                    if (result == true) {
+                      setState(() {});
+                    }
+                  },
+                );
+              },
+            );
+          },
         );
       },
     );
@@ -125,10 +220,11 @@ class _ContactsPageState extends State<ContactsPage> {
         final friendRequests = snapshot.data ?? [];
 
         return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (friendRequests.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.all(16.0),
                 child: Text("Friend Requests", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               ),
             ...friendRequests.map((request) => friendRequestItem(request, context)).toList(),
@@ -170,11 +266,14 @@ class _ContactsPageState extends State<ContactsPage> {
               return !isCurrentUser && !isFriend && !hasSentRequest && (searchQuery.isEmpty || user['name'].toLowerCase().contains(searchQuery));
             }).toList();
 
+            suggestions.sort((a, b) => a['name'].compareTo(b['name'])); // Sort alphabetically by name
+
             return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (suggestions.isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.all(8.0),
+                    padding: const EdgeInsets.all(16.0),
                     child: Text("Suggestions", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                   ),
                 ...suggestions.map((userData) => userListItem(userData, context)).toList(),
@@ -185,6 +284,7 @@ class _ContactsPageState extends State<ContactsPage> {
       },
     );
   }
+
 
   Widget userListItem(Map<String, dynamic> userData, BuildContext context) {
     return FutureBuilder<bool>(
