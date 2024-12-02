@@ -72,31 +72,31 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(kToolbarHeight),
         child: Container(
-          color: Colors.grey[900], // Set search bar background to grey[900]
+          color: Colors.grey[900],
           padding: const EdgeInsets.symmetric(horizontal: 8.0),
           child: SafeArea(
             child: Row(
               children: <Widget>[
-                SizedBox(width: 10), // Increase width
-                Icon(Icons.search_sharp, color: Colors.white, size: 30), // Increase size of search icon
-                SizedBox(width: 15), // Increase width
+                SizedBox(width: 10),
+                Icon(Icons.search_sharp, color: Colors.white, size: 30),
+                SizedBox(width: 15),
                 Expanded(
                   child: TextField(
                     decoration: InputDecoration(
                       hintText: 'Tìm kiếm',
                       border: InputBorder.none,
-                      hintStyle: TextStyle(color: Colors.white60, fontSize: 18), // Increase font size
+                      hintStyle: TextStyle(color: Colors.white60, fontSize: 18),
                     ),
-                    style: TextStyle(color: Colors.white, fontSize: 18), // Increase font size
+                    style: TextStyle(color: Colors.white, fontSize: 18),
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.qr_code_scanner_outlined, color: Colors.white, size: 30), // Increase size of QR code scanner icon
+                  icon: Icon(Icons.qr_code_scanner_outlined, color: Colors.white, size: 30),
                   onPressed: _navigateToScanQRCode,
                 ),
                 if (_selectedIndex == 0)
                   IconButton(
-                    icon: Icon(Icons.add, color: Colors.white, size: 30), // Add friend icon
+                    icon: Icon(Icons.add, color: Colors.white, size: 30),
                     onPressed: _addFriend,
                   ),
               ],
@@ -109,23 +109,37 @@ class _HomeScreenState extends State<HomeScreen> {
         children: _pages,
       ),
       bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
+        items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Icon(Icons.message),
+            icon: Icon(
+              _selectedIndex == 0 ? Icons.message : Icons.message_outlined,
+              color: _selectedIndex == 0 ? Colors.blue : Colors.grey,
+            ),
             label: 'Messages',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.contacts),
+            icon: Icon(
+              _selectedIndex == 1 ? Icons.contacts : Icons.contacts_outlined,
+              color: _selectedIndex == 1 ? Colors.blue : Colors.grey,
+            ),
             label: 'Contacts',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person),
+            icon: Icon(
+              _selectedIndex == 2 ? Icons.person : Icons.person_outline,
+              color: _selectedIndex == 2 ? Colors.blue : Colors.grey,
+            ),
             label: 'Profile',
           ),
         ],
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
+        selectedItemColor: Colors.blue,
+        unselectedItemColor: Colors.grey,
+        showSelectedLabels: true,
+        showUnselectedLabels: false,
       ),
     );
   }
+
 }

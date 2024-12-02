@@ -38,7 +38,6 @@ class _MessagesPageState extends State<MessagesPage> {
     });
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -50,8 +49,40 @@ class _MessagesPageState extends State<MessagesPage> {
     if (friends.isEmpty) {
       return const Center(child: Text("No Friends Found"));
     }
-    return ListView(
-      children: friends.map<Widget>((friendData) => friendListItem(friendData, context)).toList(),
+    return ListView.builder(
+      itemCount: friends.length + 1,
+      itemBuilder: (context, index) {
+        if (index == friends.length) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 30.0),
+            child: Center(
+              child: Column(
+                children: [
+                  Text(
+                    'Easy to find and chat with your friends',
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                  ),
+                  SizedBox(height: 15),
+                  ElevatedButton(
+                    style: ButtonStyle(
+                      backgroundColor: MaterialStateProperty.all<Color>(Colors.blueAccent),
+                    ),
+                    onPressed: () {
+                      // Handle add friend action here
+                    },
+                    child: Text(
+                      'Add more friend',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal, color: Colors.white),
+                    ),
+                  )
+                ],
+              ),
+            ),
+          );
+        }
+        final friendData = friends[index];
+        return friendListItem(friendData, context);
+      },
     );
   }
 
@@ -91,7 +122,6 @@ class _MessagesPageState extends State<MessagesPage> {
       },
     );
   }
-
 
   void _hideChatOptimistically(BuildContext context, String friendId) {
     _updateLocalChatState(friendId);
