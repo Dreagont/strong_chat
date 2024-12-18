@@ -8,6 +8,8 @@ class Message{
   final Timestamp timestamp;
   final String fileName;
   bool isSynced;
+  bool isNoti_isDeliver;
+  bool isRead;
 
   Message({
     required this.senderId,
@@ -17,6 +19,8 @@ class Message{
     required this.timestamp,
     required this.fileName,
     this.isSynced = false,
+    this.isNoti_isDeliver = false,
+    this.isRead = false
   });
 
   Map<String, dynamic> MessToMap() {
@@ -26,7 +30,9 @@ class Message{
       'message': message,
       'messType': messType,
       'timeStamp' : timestamp,
-      'fileName': fileName
+      'fileName': fileName,
+      'isNoti_isDeliver': isNoti_isDeliver,
+      'isRead': isRead
     };
   }
 }

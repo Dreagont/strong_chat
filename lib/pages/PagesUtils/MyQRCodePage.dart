@@ -34,6 +34,7 @@ class MyQRCodePage extends StatelessWidget {
             ),
             SizedBox(height: 20),
             QrImageView(
+              backgroundColor: Colors.white,
               data: userId,
               version: QrVersions.auto,
               size: 200.0,

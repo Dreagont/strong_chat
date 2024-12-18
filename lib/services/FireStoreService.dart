@@ -27,7 +27,6 @@ class FireStoreService {
     );
   }
 
-  // Listen for new messages in a chat room and trigger notifications
   void listenForNewMessages(String userId) {
     fireStore
         .collection('Users')
@@ -60,7 +59,6 @@ class FireStoreService {
         .doc(chatBoxId)
         .collection("messages")
         .orderBy("timeStamp", descending: true)
-        .limit(1)
         .snapshots()
         .listen((snapshot) async {
       if (snapshot.docs.isNotEmpty) {
@@ -68,21 +66,22 @@ class FireStoreService {
         final senderId = messageData['senderId'];
         final message = messageData['message'];
 
-        // Fetch sender's name
-        final senderName = await getSenderName(senderId);
-        print('New message from $senderName: $message');
-
-        // Trigger notification only if the current user is NOT the sender
+        // Only proceed if the sender is not the current user
         if (senderId != userId) {
-          _sendNotification(
-            title: 'New message from $senderName',
-            body: message,
-            senderName: senderName, // Pass sender name to notification
-          );
+          if (!(messageData['isNoti_isDeliver'] ?? true)) {
+            final senderName = await getSenderName(senderId);
+            _sendNotification(
+              title: 'New message from $senderName',
+              body: message,
+              senderName: senderName, // Pass sender name to notification
+            );
+            snapshot.docs.first.reference.update({'isNoti_isDeliver': true});
+          }
         }
       }
     });
   }
+
 
   // Helper method to get sender's name
   Future<String> getSenderName(String senderId) async {
@@ -363,6 +362,7 @@ class FireStoreService {
     }
   }
 
+
   Future<void> updateUserAvatar(String userId, String avatarUrl) async {
     try {
       await fireStore
@@ -381,4 +381,44 @@ class FireStoreService {
       print('Error updating user name: $e');
     }
   }
+
+  Future<String> getLastMessageStatusString(String userId, String friendId) async {
+    List<String> ids = [userId, friendId];
+    ids.sort();
+    String chatBoxId = ids.join('_');
+
+    try {
+      QuerySnapshot messageSnapshot = await fireStore
+          .collection("ChatRoom")
+          .doc(chatBoxId)
+          .collection("messages")
+          .orderBy("timeStamp", descending: true)
+          .limit(1)
+          .get();
+
+      if (messageSnapshot.docs.isNotEmpty) {
+        final Map<String, dynamic>? messageData = messageSnapshot.docs.first.data() as Map<String, dynamic>?;
+
+        if (messageData != null) {
+          final isNoti = messageData['isNoti_isDeliver'] as bool? ?? false;
+          final isRead = messageData['isRead'] as bool? ?? false;
+
+          if (isRead) {
+            return 'Seen';
+          } else if (isNoti) {
+            return 'Received';
+          } else {
+            return 'Delivered';
+          }
+        }
+      }
+      return 'No messages found.';
+    } catch (e) {
+      print('Error getting last message status: $e');
+      return 'Error';
+    }
+  }
+
+
 }
+

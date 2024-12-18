@@ -48,6 +48,20 @@ Widget createChatTile({
           senderPrefix: senderPrefix,
           timestamp: timestamp,
           onTap: () {
+            if (friendData['id'] != currentUserId) { // Compare IDs first
+              fireStoreService.getMessage(currentUserId, friendData['id'])
+                  .first // Get the first snapshot of the stream
+                  .then((snapshot) {
+                for (DocumentSnapshot doc in snapshot.docs) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  // Update only if the message is unread and sent by the friend
+                  if (data['senderId'] == friendData['id'] && !(data['isRead'] ?? false)) {
+                    doc.reference.update({'isRead': true});
+                  }
+                }
+              });
+            }
+
             Navigator.push(
               context,
               MaterialPageRoute(

@@ -93,8 +93,11 @@ class _ChatPageState extends State<ChatPage> {
               'timeStamp': data['timeStamp'],
               'senderId': data['senderId'],
               'fileName': data['fileName'],
+              'isNoti_isDeliver': data['isNoti_isDeliver'],
+              'isRead': data['isRead']
             };
           }).toList();
+
 
           allMessages.sort((a, b) => (b['timeStamp'] as Timestamp)
               .compareTo(a['timeStamp'] as Timestamp));
@@ -207,7 +210,24 @@ class _ChatPageState extends State<ChatPage> {
     final userId = authService.getCurrentUserId();
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.nickname)),
+      appBar: AppBar(
+        title: Text(widget.nickname),
+        backgroundColor: Colors.grey[900],
+        actions: [
+          IconButton(
+            icon: Icon(Icons.call_outlined),
+            onPressed: (){
+              print("On develop Call");
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.videocam_outlined),
+            onPressed: (){
+              print("On develop VideoCall");
+            },
+          )
+        ],
+      ),
       body: Column(
         children: [
           Expanded(
@@ -293,10 +313,7 @@ class _ChatPageState extends State<ChatPage> {
   }) {
     String userId = authService.getCurrentUserId();
 
-    if (displayedMessages.isEmpty) {
-      return const Center(
-          child: Text("No messages yet. Start the conversation!"));
-    }
+
 
     return ListView.builder(
       controller: scrollController,
@@ -308,8 +325,7 @@ class _ChatPageState extends State<ChatPage> {
           return Container(
             padding: EdgeInsets.all(16),
             alignment: Alignment.center,
-            child:
-                isLoadingMore ? CircularProgressIndicator() : SizedBox.shrink(),
+            child: isLoadingMore ? CircularProgressIndicator() : SizedBox.shrink(),
           );
         }
 
@@ -320,16 +336,52 @@ class _ChatPageState extends State<ChatPage> {
         if (!showTimestamp && index < displayedMessages.length - 1) {
           Timestamp nextTimestamp = displayedMessages[index + 1]["timeStamp"];
           showTimestamp = currentTimestamp
-                  .toDate()
-                  .difference(nextTimestamp.toDate())
-                  .inHours >
+              .toDate()
+              .difference(nextTimestamp.toDate())
+              .inHours >
               3;
         }
 
-        return MessBoxWithData(data, showTimestamp, formatTimestamp);
+        String deliverStatus = '';
+        if(index ==0){
+          if(data['isRead']== true){
+            deliverStatus = 'Seen';
+          }else if(data['isNoti_isDeliver']==true){
+            deliverStatus = "Received";
+          }else{
+            deliverStatus = "Delivered";
+          }
+        }
+
+
+        return Column(
+          children: [
+            MessBoxWithData(data, showTimestamp, formatTimestamp),
+            if (index == 0 && data['senderId'] == userId) ...[
+              Padding(
+                padding: const EdgeInsets.only(right: 25.0),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    deliverStatus,
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 14,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 10),
+            ],
+            if(index == 0 && data['senderId'] != userId)
+              SizedBox(height: 10,)
+          ],
+        );
       },
     );
   }
+
 
   Widget MessBoxWithData(Map<String, dynamic> data, bool showTimestamp,
       String Function(Timestamp) formatTimestamp) {
