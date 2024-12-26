@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:strong_chat/chat/Media/FullScreenMediaView.dart';
 import 'package:video_player/video_player.dart';
 
 import 'FullscreenVideoPlayer.dart';
@@ -6,8 +7,9 @@ import 'VideoPlayerControllerManager.dart';
 
 class VideoPlayerWidget extends StatefulWidget {
   final String videoUrl;
+  final List<MediaItem> mediaUrls;
 
-  VideoPlayerWidget({required this.videoUrl});
+  VideoPlayerWidget({required this.videoUrl, required this.mediaUrls});
 
   @override
   _VideoPlayerWidgetState createState() => _VideoPlayerWidgetState();
@@ -45,11 +47,13 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   }
 
   void _toggleFullscreen() async {
+    final int currentIndex = widget.mediaUrls.indexWhere((mediaItem) => mediaItem.url == widget.videoUrl);
+
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => FullscreenVideoPlayer(
-          videoUrl: widget.videoUrl,
-          controller: _controller,
+        builder: (context) => FullScreenMediaView(
+          mediaItems: widget.mediaUrls,
+          initialIndex: currentIndex,
         ),
       ),
     );

@@ -64,7 +64,7 @@ class _ContactsPageState extends State<ContactsPage> {
           return const Center(child: Text("Error loading users"));
         }
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: Text(''));
         }
         final users = snapshot.data ?? [];
         final currentUserId = authService.getCurrentUserId();
@@ -88,7 +88,7 @@ class _ContactsPageState extends State<ContactsPage> {
           return const Center(child: Text("Error loading friends"));
         }
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: Text(''));
         }
         final friends = snapshot.data ?? [];
         final filteredFriends = friends.where((friend) {
@@ -117,7 +117,7 @@ class _ContactsPageState extends State<ContactsPage> {
       future: friendService.checkIfFriends(authService.getCurrentUserId(), userData["id"]),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
+          return Center(child: Text(''));
         }
 
         if (snapshot.hasError) {
@@ -130,7 +130,7 @@ class _ContactsPageState extends State<ContactsPage> {
           future: friendService.checkReceivedRequest(userData["id"], authService.getCurrentUserId()),
           builder: (context, requestSnapshot) {
             if (requestSnapshot.connectionState == ConnectionState.waiting) {
-              return Center(child: CircularProgressIndicator());
+              return Center(child: Text(''));
             }
 
             if (requestSnapshot.hasError) {
@@ -143,7 +143,7 @@ class _ContactsPageState extends State<ContactsPage> {
               future: friendService.checkPendingRequest(authService.getCurrentUserId(), userData["id"]),
               builder: (context, pendingSnapshot) {
                 if (pendingSnapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
+                  return Center(child: Text(''));
                 }
 
                 if (pendingSnapshot.hasError) {
@@ -215,7 +215,7 @@ class _ContactsPageState extends State<ContactsPage> {
           return const Center(child: Text("Error loading friend requests"));
         }
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: Text(''));
         }
         final friendRequests = snapshot.data ?? [];
 
@@ -242,7 +242,7 @@ class _ContactsPageState extends State<ContactsPage> {
           return const Center(child: Text("Error loading suggestions"));
         }
         if (friendSnapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: Text(''));
         }
         final friends = friendSnapshot.data ?? [];
         final friendIds = friends.map((friend) => friend['id']).toSet();
@@ -254,7 +254,7 @@ class _ContactsPageState extends State<ContactsPage> {
               return const Center(child: Text("Error loading suggestions"));
             }
             if (requestSnapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+              return const Center(child: Text(''));
             }
             final friendRequests = requestSnapshot.data ?? [];
             final requesterIds = friendRequests.map((request) => request['requesterId']).toSet();
@@ -291,7 +291,7 @@ class _ContactsPageState extends State<ContactsPage> {
       future: friendService.checkIfFriends(authService.getCurrentUserId(), userData["id"]),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
+          return Center(child: Text(''));
         }
 
         if (snapshot.hasError) {
@@ -304,7 +304,7 @@ class _ContactsPageState extends State<ContactsPage> {
           future: friendService.checkReceivedRequest(userData["id"], authService.getCurrentUserId()),
           builder: (context, requestSnapshot) {
             if (requestSnapshot.connectionState == ConnectionState.waiting) {
-              return Center(child: CircularProgressIndicator());
+              return Center(child: Text(''));
             }
 
             if (requestSnapshot.hasError) {
@@ -317,7 +317,7 @@ class _ContactsPageState extends State<ContactsPage> {
               future: friendService.checkPendingRequest(authService.getCurrentUserId(), userData["id"]),
               builder: (context, pendingSnapshot) {
                 if (pendingSnapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
+                  return Center(child: Text(''));
                 }
 
                 if (pendingSnapshot.hasError) {
@@ -374,7 +374,7 @@ class _ContactsPageState extends State<ContactsPage> {
       future: fireStoreService.getUserInfo(request["requesterId"]),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return CircularProgressIndicator();
+          return Text('');
         } else if (snapshot.hasError) {
           return Text('Error loading user info');
         }

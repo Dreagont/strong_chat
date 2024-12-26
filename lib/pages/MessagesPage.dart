@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:strong_chat/services/AuthService.dart';
 import 'package:strong_chat/services/FireStoreService.dart';
-import '../chat/ChatPage.dart';
-import '../UI_Widgets/ChatTile.dart';
 import 'PagesUtils/MessagesPageHelper.dart';
 
 class MessagesPage extends StatefulWidget {
@@ -47,7 +44,7 @@ class _MessagesPageState extends State<MessagesPage> {
 
   Widget userList() {
     if (friends.isEmpty) {
-      return const Center(child: Text("No Friends Found"));
+      return const Center(child: Text("Loading......"));
     }
     return ListView.builder(
       itemCount: friends.length + 1,

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:strong_chat/chat/Media/FullScreenMediaView.dart';
+import 'FullScreenImageView.dart';
 
 class ImageWithPlaceholder extends StatefulWidget {
   final String imageUrl;
+  final List<MediaItem> mediaUrls;
 
-  const ImageWithPlaceholder({Key? key, required this.imageUrl}) : super(key: key);
+  const ImageWithPlaceholder({Key? key, required this.imageUrl, required this.mediaUrls}) : super(key: key);
 
   @override
   _ImageWithPlaceholderState createState() => _ImageWithPlaceholderState();
@@ -56,43 +59,67 @@ class _ImageWithPlaceholderState extends State<ImageWithPlaceholder> {
     super.dispose();
   }
 
+  void _openFullScreen(BuildContext context, List<MediaItem> mediaItems, String imageUrl) {
+    final int currentIndex = mediaItems.indexWhere((mediaItem) => mediaItem.url == imageUrl);
+
+    if (currentIndex != -1) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => FullScreenMediaView(
+            mediaItems: mediaItems,
+            initialIndex: currentIndex,
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Media item not found')),
+      );
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
-    return _isLoaded
-        ? Column(
-      children: [
-        Text(
-          '${_width?.toInt()}x${_height?.toInt()}',
-          style: TextStyle(fontSize: 12, color: Colors.grey),
+    return GestureDetector(
+      onTap: () => _openFullScreen(context, widget.mediaUrls, widget.imageUrl),
+      child: _isLoaded
+          ? Column(
+        children: [
+          Text(
+            '${_width?.toInt()}x${_height?.toInt()}',
+            style: TextStyle(fontSize: 12, color: Colors.grey),
+          ),
+          Image.network(
+            widget.imageUrl,
+            fit: BoxFit.cover,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded /
+                      loadingProgress.expectedTotalBytes!
+                      : null,
+                ),
+              );
+            },
+          ),
+        ],
+      )
+          : _isError
+          ? Center(
+        child: Text(
+          "Failed to load image, retrying...",
+          style: TextStyle(color: Colors.red),
         ),
-        Image.network(
-          widget.imageUrl,
-          fit: BoxFit.cover,
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return Center(
-              child: CircularProgressIndicator(
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded /
-                    loadingProgress.expectedTotalBytes!
-                    : null,
-              ),
-            );
-          },
-        ),
-      ],
-    )
-        : _isError
-        ? Center(
-      child: Text(
-        "Failed to load image, retrying...",
-        style: TextStyle(color: Colors.red),
+      )
+          : SizedBox(
+        width: _width ?? 100.0,
+        height: _height ?? 100.0,
+        child: Center(child: CircularProgressIndicator()),
       ),
-    )
-        : SizedBox(
-      width: _width ?? 100.0, // Default width if _width is null
-      height: _height ?? 100.0, // Default height if _height is null
-      child: Center(child: CircularProgressIndicator()),
     );
   }
 }

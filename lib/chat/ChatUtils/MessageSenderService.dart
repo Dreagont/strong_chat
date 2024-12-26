@@ -76,7 +76,7 @@ class MessageSenderService {
 
         String downloadUrl = await FirebaseStorage.instance.ref(filePath).getDownloadURL();
 
-        await chatService.sendMessage(friendId, downloadUrl, 'image', "");
+        await chatService.sendMessage(friendId, downloadUrl, 'image', pickedImage.name);
 
         onMessageSent();
       } catch (e) {
@@ -106,6 +106,11 @@ class MessageSenderService {
           chatBoxId,
           friendId
       );
+      String filePath = 'ChatData/$chatBoxId/$timestamp.mp4';
+
+      String downloadUrl = await FirebaseStorage.instance.ref(filePath).getDownloadURL();
+
+      await chatService.sendMessage(friendId, downloadUrl, 'video', pickedVideo.name);
       onMessageSent();
     }
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:strong_chat/services/AuthService.dart';
 import 'package:strong_chat/services/FriendService.dart';
 import '../../chat/ChatPage.dart';
 import '../../services/FireStoreService.dart';
@@ -20,6 +21,8 @@ class UserProfilePage extends StatefulWidget {
 class _UserProfilePageState extends State<UserProfilePage> {
   final FriendService friendService = FriendService();
   late String relationshipStatus;
+  final FireStoreService chatService = FireStoreService();
+  final AuthService authService = AuthService();
 
   @override
   void initState() {
@@ -74,6 +77,15 @@ class _UserProfilePageState extends State<UserProfilePage> {
     }
   }
 
+  void fetchNickname() async {
+    String? nickname = await chatService.getNickname(authService.getCurrentUserId(), widget.userData["id"]);
+    if (nickname != null) {
+      print("Nickname: $nickname");
+    } else {
+      print("Nickname not found");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -88,8 +100,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 children: [
                   CircleAvatar(
                     radius: 50,
-                    backgroundImage:
-                        NetworkImage(widget.userData["avatar"] ?? ''),
+                    backgroundImage: NetworkImage(widget.userData["avatar"] ?? ''),
                     child: widget.userData["avatar"] == null
                         ? Icon(Icons.person, size: 50)
                         : null,
@@ -102,26 +113,43 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   const SizedBox(height: 8),
                   Text(
                     widget.userData["email"],
-                    style: TextStyle(fontSize: 16,),
+                    style: TextStyle(fontSize: 16),
                   ),
                   const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ChatPage(
-                                friendName: widget.userData["name"],
-                                friendId: widget.userData["id"],
-                                nickname: widget.userData["name"],
-                              ),
-                            ),
+                      FutureBuilder<String?>(
+                        future: chatService.getNickname(
+                          authService.getCurrentUserId(),
+                          widget.userData["id"],
+                        ),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return ElevatedButton(
+                              onPressed: null,
+                              child: Text("Loading..."),
+                            );
+                          }
+
+                          final nickname = snapshot.data;
+                          return ElevatedButton(
+                            onPressed: nickname != null
+                                ? () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ChatPage(
+                                    friendData: widget.userData,
+                                    nickname: nickname,
+                                  ),
+                                ),
+                              );
+                            }
+                                : null,
+                            child: Text("Chat"),
                           );
                         },
-                        child: Text("Chat"),
                       ),
                       ElevatedButton(
                         onPressed: () => handleFriendAction(context),
@@ -129,12 +157,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
                           relationshipStatus == 'add'
                               ? 'Add Friend'
                               : relationshipStatus == 'cancel'
-                                  ? 'Cancel Request'
-                                  : relationshipStatus == 'remove'
-                                      ? 'Remove Friend'
-                                      : relationshipStatus == 'accept'
-                                          ? 'Accept Request'
-                                          : 'Decline Request',
+                              ? 'Cancel Request'
+                              : relationshipStatus == 'remove'
+                              ? 'Remove Friend'
+                              : relationshipStatus == 'accept'
+                              ? 'Accept Request'
+                              : 'Decline Request',
                         ),
                       ),
                     ],
@@ -147,4 +175,5 @@ class _UserProfilePageState extends State<UserProfilePage> {
       ),
     );
   }
+
 }

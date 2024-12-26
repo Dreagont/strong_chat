@@ -66,9 +66,8 @@ Widget createChatTile({
               context,
               MaterialPageRoute(
                 builder: (context) => ChatPage(
-                    friendName: friendData["name"],
-                    friendId: friendData["id"],
-                    nickname: nickname
+                    friendData: friendData,
+                    nickname: nickname,
                 ),
               ),
             );

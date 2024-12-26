@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'dart:io';
 
 class FullscreenVideoPlayer extends StatelessWidget {
   final String videoUrl;
@@ -11,10 +15,48 @@ class FullscreenVideoPlayer extends StatelessWidget {
     required this.controller,
   }) : super(key: key);
 
+  Future<void> _downloadVideo(BuildContext context) async {
+    if (await Permission.storage.request().isGranted) {
+      try {
+        final response = await http.get(Uri.parse(videoUrl));
+        final bytes = response.bodyBytes;
+
+        final directory = await getExternalStorageDirectory();
+        final filePath = '${directory!.path}/downloaded_video.mp4';
+
+        final file = File(filePath);
+        await file.writeAsBytes(bytes);
+
+        print(filePath);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Video downloaded to $filePath')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to download video')),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Storage permission is required to download the video')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
+      appBar: AppBar(
+        title: Text('Fullscreen Video Player'),
+        backgroundColor: Colors.transparent,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.download),
+            onPressed: () => _downloadVideo(context),
+          ),
+        ],
+      ),
       body: GestureDetector(
         onVerticalDragStart: (_) {
           Navigator.of(context).pop('exit_fullscreen'); // Exit fullscreen on drag.

@@ -306,6 +306,25 @@ class FireStoreService {
     });
   }
 
+  Future<String?> getNickname(String userId, String friendId) async {
+    try {
+      final querySnapshot = await fireStore
+          .collection("Users")
+          .doc(userId)
+          .collection("chats")
+          .where('friendId', isEqualTo: friendId)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        return querySnapshot.docs.first.data()['friendNickname'] as String?;
+      }
+      return null;
+    } catch (e) {
+      print("Error getting nickname: $e");
+      return null;
+    }
+  }
+
   Future<void> editNicknameForFriend(
       String userId, String friendId, String newNickname) async {
     final querySnapshot = await fireStore
@@ -419,6 +438,107 @@ class FireStoreService {
     }
   }
 
+  Future<void> toggleMessageLike(String userId, String friendId, String messageId) async {
+    List<String> ids = [userId, friendId];
+    ids.sort();
+    String chatBoxId = ids.join('_');
 
+    try {
+      DocumentReference messageRef = fireStore
+          .collection("ChatRoom")
+          .doc(chatBoxId)
+          .collection("messages")
+          .doc(messageId);
+
+      DocumentSnapshot messageDoc = await messageRef.get();
+      Map<String, dynamic> messageData = messageDoc.data() as Map<String, dynamic>? ?? {};
+
+      List<String> likes = List<String>.from(messageData['likes'] ?? []);
+
+      if (likes.contains(userId)) {
+        likes.remove(userId);
+      } else {
+        likes.add(userId);
+      }
+
+      await messageRef.set({
+        ...messageData,
+        'likes': likes
+      }, SetOptions(merge: true));
+    } catch (e) {
+      print('Error toggling message like: $e');
+    }
+  }
+
+  Future<void> deleteMessage(String userId, String friendId, String messageId) async {
+    List<String> ids = [userId, friendId];
+    ids.sort();
+    String chatBoxId = ids.join('_');
+
+    try {
+      DocumentReference messageRef = fireStore
+          .collection("ChatRoom")
+          .doc(chatBoxId)
+          .collection("messages")
+          .doc(messageId);
+
+      DocumentSnapshot messageDoc = await messageRef.get();
+      Map<String, dynamic> messageData = messageDoc.data() as Map<String, dynamic>? ?? {};
+
+      List<String> deletedBy = List<String>.from(messageData['deletedBy'] ?? []);
+
+      if (!deletedBy.contains(userId)) {
+        deletedBy.add(userId);
+        await messageRef.set({
+          ...messageData,
+          'deletedBy': deletedBy
+        }, SetOptions(merge: true));
+      }
+    } catch (e) {
+      print('Error deleting message: $e');
+    }
+  }
+
+  Future<bool> undoSentMessage(String userId, String friendId, Timestamp timestamp) async {
+    List<String> ids = [userId, friendId];
+    ids.sort();
+    String chatBoxId = ids.join('_');
+
+    try {
+      QuerySnapshot messagesSnapshot = await fireStore
+          .collection("ChatRoom")
+          .doc(chatBoxId)
+          .collection("messages")
+          .where('timeStamp', isEqualTo: timestamp)
+          .where('senderId', isEqualTo: userId)
+          .get();
+
+      if (messagesSnapshot.docs.isNotEmpty) {
+        DocumentReference messageRef = messagesSnapshot.docs.first.reference;
+
+        await messageRef.delete();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('Error undoing sent message: $e');
+      return false;
+    }
+  }
+
+  bool isMessageDeletedForUser(Map<String, dynamic> messageData, String userId) {
+    List<String> deletedBy = List<String>.from(messageData['deletedBy'] ?? []);
+    return deletedBy.contains(userId);
+  }
+
+  int getMessageLikesCount(Map<String, dynamic> messageData) {
+    List<String> likes = List<String>.from(messageData['likes'] ?? []);
+    return likes.length;
+  }
+
+  bool hasUserLikedMessage(Map<String, dynamic> messageData, String userId) {
+    List<String> likes = List<String>.from(messageData['likes'] ?? []);
+    return likes.contains(userId);
+  }
 }
 

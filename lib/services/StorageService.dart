@@ -134,8 +134,6 @@ class StorageService with ChangeNotifier {
       String filePath = 'ChatData/$chatBoxId/$fileName.mp4';
       await firebaseStorage.ref(filePath).putFile(file);
 
-      String mess = await FirebaseStorage.instance.ref(filePath).getDownloadURL();
-      await _fireStoreService.sendMessage(friendId, mess, 'video', "");
       notifyListeners();
     } catch (e) {
       print(e);
