@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../pages/HomePage.dart';
 import '../services/AuthService.dart';
+import '../services/notification_service.dart';
 import 'RegisterPage.dart';
 
 class LoginPage extends StatefulWidget {
@@ -38,6 +39,7 @@ class _LoginPageState extends State<LoginPage> {
     Navigator.pop(context);
 
     if (user != null) {
+      LocalNotificationService().uploadFcmToken();
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => HomeScreen(id: user.uid)),

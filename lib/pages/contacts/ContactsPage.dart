@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:strong_chat/services/FriendService.dart';
 import '../../UI_Widgets/UserTile.dart';
+import '../ChangeTheme.dart';
 import '../contacts/UserProfilePage.dart';
 import '../../services/AuthService.dart';
 import '../../services/FireStoreService.dart';
@@ -57,6 +59,10 @@ class _ContactsPageState extends State<ContactsPage> {
   }
 
   Widget buildUserLists(BuildContext context) {
+
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
+
     return StreamBuilder<List<Map<String, dynamic>>>(
       stream: fireStoreService.getUsersStream(),
       builder: (context, snapshot) {
@@ -71,16 +77,16 @@ class _ContactsPageState extends State<ContactsPage> {
 
         return ListView(
           children: [
-            buildFriendsSection(context),
-            buildFriendRequestsSection(context),
-            buildSuggestionsSection(context, users, currentUserId),
+            buildFriendsSection(context,themeProvider),
+            buildFriendRequestsSection(context,themeProvider),
+            buildSuggestionsSection(context, users, currentUserId,themeProvider),
           ],
         );
       },
     );
   }
 
-  Widget buildFriendsSection(BuildContext context) {
+  Widget buildFriendsSection(BuildContext context,ThemeProvider themeProvider) {
     return StreamBuilder<List<Map<String, dynamic>>>(
       stream: friendService.getFriendsStream(authService.getCurrentUserId()),
       builder: (context, snapshot) {
@@ -207,7 +213,7 @@ class _ContactsPageState extends State<ContactsPage> {
     );
   }
 
-  Widget buildFriendRequestsSection(BuildContext context) {
+  Widget buildFriendRequestsSection(BuildContext context, ThemeProvider themeProvider) {
     return StreamBuilder<List<Map<String, dynamic>>>(
       stream: friendService.getFriendRequests(authService.getCurrentUserId()),
       builder: (context, snapshot) {
@@ -227,14 +233,14 @@ class _ContactsPageState extends State<ContactsPage> {
                 padding: const EdgeInsets.all(16.0),
                 child: Text("Friend Requests", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               ),
-            ...friendRequests.map((request) => friendRequestItem(request, context)).toList(),
+            ...friendRequests.map((request) => friendRequestItem(request, context,themeProvider)).toList(),
           ],
         );
       },
     );
   }
 
-  Widget buildSuggestionsSection(BuildContext context, List<Map<String, dynamic>> users, String currentUserId) {
+  Widget buildSuggestionsSection(BuildContext context, List<Map<String, dynamic>> users, String currentUserId, ThemeProvider themeProvider) {
     return StreamBuilder<List<Map<String, dynamic>>>(
       stream: friendService.getFriendsStream(currentUserId),
       builder: (context, friendSnapshot) {
@@ -276,7 +282,7 @@ class _ContactsPageState extends State<ContactsPage> {
                     padding: const EdgeInsets.all(16.0),
                     child: Text("Suggestions", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                   ),
-                ...suggestions.map((userData) => userListItem(userData, context)).toList(),
+                ...suggestions.map((userData) => userListItem(userData, context,themeProvider)).toList(),
               ],
             );
           },
@@ -286,7 +292,7 @@ class _ContactsPageState extends State<ContactsPage> {
   }
 
 
-  Widget userListItem(Map<String, dynamic> userData, BuildContext context) {
+  Widget userListItem(Map<String, dynamic> userData, BuildContext context, ThemeProvider themeProvider) {
     return FutureBuilder<bool>(
       future: friendService.checkIfFriends(authService.getCurrentUserId(), userData["id"]),
       builder: (context, snapshot) {
@@ -328,6 +334,7 @@ class _ContactsPageState extends State<ContactsPage> {
                 isFriend = isFriend || hasReceivedRequest;
 
                 return UserTile(
+                  themeProvider: themeProvider,
                   text: userData["name"],
                   avatar: userData["avatar"],
                   onTap: () async {
@@ -369,7 +376,7 @@ class _ContactsPageState extends State<ContactsPage> {
     );
   }
 
-  Widget friendRequestItem(Map<String, dynamic> request, BuildContext context) {
+  Widget friendRequestItem(Map<String, dynamic> request, BuildContext context, ThemeProvider themeProvider) {
     return FutureBuilder<Map<String, dynamic>?>(
       future: fireStoreService.getUserInfo(request["requesterId"]),
       builder: (context, snapshot) {
@@ -384,6 +391,7 @@ class _ContactsPageState extends State<ContactsPage> {
         final _userName = userInfo?['name'] as String? ?? 'User Name';
 
         return UserTile(
+          themeProvider: themeProvider,
           onTap: () {
             if (userInfo != null) {
               Navigator.push(

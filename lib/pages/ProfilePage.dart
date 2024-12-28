@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import 'package:strong_chat/services/AuthService.dart';
 import 'package:strong_chat/services/FireStoreService.dart';
 import 'package:strong_chat/services/StorageService.dart';
+import 'package:strong_chat/services/notification_service.dart';
+import 'ChangeTheme.dart';
 import '../auth/LoginPage.dart';
+import 'ChangeTheme.dart';
 import 'PagesUtils/MyQRCodePage.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -63,6 +67,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
     if (shouldLogout == true) {
       await _authService.signout();
+      LocalNotificationService().logout();
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => LoginPage()),
@@ -276,9 +281,23 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  void _navigateToThemePage(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ThemeSettingsScreen()
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     return Scaffold(
+      backgroundColor: themeProvider.themeMode == ThemeMode.dark
+          ? Colors.black
+          : Colors.grey[100],
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(0, 0.0, 0, 8.0),
@@ -286,7 +305,9 @@ class _ProfilePageState extends State<ProfilePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget> [
               Container(
-                color: Colors.grey[850], // Slightly lighter black background
+                color: themeProvider.themeMode == ThemeMode.dark
+                    ? Colors.grey[850]
+                    : Colors.white, // Slightly lighter black background
                 width: double.infinity, // Full width
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
@@ -341,7 +362,9 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               SizedBox(height: 10),
               Container(
-                color: Colors.grey[850], // Slightly lighter black background for entire section
+                  color: themeProvider.themeMode == ThemeMode.dark
+                      ? Colors.grey[850]
+                      : Colors.white,
                 width: double.infinity, // Full width
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -358,6 +381,13 @@ class _ProfilePageState extends State<ProfilePage> {
                           title: 'My QR Code',
                           icon: Icons.qr_code,
                           onTap: () => _navigateToMyQRCodePage(context),
+                          showDivider: true
+                      ),
+                      _buildSection(
+                          context,
+                          title: 'Theme',
+                          icon: Icons.change_circle_outlined,
+                          onTap: () => _navigateToThemePage(context),
                           showDivider: true
                       ),
                       _buildSection(

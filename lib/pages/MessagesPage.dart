@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:strong_chat/services/AuthService.dart';
 import 'package:strong_chat/services/FireStoreService.dart';
 import 'PagesUtils/MessagesPageHelper.dart';
+import 'ChangeTheme.dart';
+
 
 class MessagesPage extends StatefulWidget {
   @override
@@ -37,12 +40,17 @@ class _MessagesPageState extends State<MessagesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     return Scaffold(
-      body: userList(),
+      backgroundColor: themeProvider.themeMode == ThemeMode.dark
+          ? Colors.black
+          : Colors.grey[200],
+      body: userList(themeProvider),
     );
   }
 
-  Widget userList() {
+  Widget userList(ThemeProvider theme) {
     if (friends.isEmpty) {
       return const Center(child: Text("Loading......"));
     }
@@ -65,7 +73,7 @@ class _MessagesPageState extends State<MessagesPage> {
                       backgroundColor: MaterialStateProperty.all<Color>(Colors.blueAccent),
                     ),
                     onPressed: () {
-                      // Handle add friend action here
+
                     },
                     child: Text(
                       'Add more friend',
@@ -78,12 +86,12 @@ class _MessagesPageState extends State<MessagesPage> {
           );
         }
         final friendData = friends[index];
-        return friendListItem(friendData, context);
+        return friendListItem(friendData, context, theme);
       },
     );
   }
 
-  Widget friendListItem(Map<String, dynamic> friendData, BuildContext context) {
+  Widget friendListItem(Map<String, dynamic> friendData, BuildContext context, ThemeProvider theme) {
     final String currentUserId = authService.getCurrentUserId();
 
     return StreamBuilder<String?>(
@@ -99,6 +107,7 @@ class _MessagesPageState extends State<MessagesPage> {
         final nickname = nicknameSnapshot.data ?? friendData["name"];
 
         return createChatTile(
+          theme: theme,
           context: context,
           friendData: friendData,
           currentUserId: currentUserId,

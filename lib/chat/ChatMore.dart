@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:strong_chat/services/AuthService.dart';
 import 'package:strong_chat/services/FriendService.dart';
 
+import '../pages/ChangeTheme.dart';
 import '../pages/contacts/UserProfilePage.dart';
 
 class ChatMore extends StatefulWidget {
@@ -50,10 +52,15 @@ class _ChatMoreState extends State<ChatMore> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
+
     return Scaffold(
       appBar: AppBar(
         title: Text('More Options'),
-        backgroundColor: Colors.black,
+        backgroundColor: themeProvider.themeMode == ThemeMode.dark
+            ? Colors.grey[850]
+            : Colors.blue,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -73,151 +80,142 @@ class _ChatMoreState extends State<ChatMore> {
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: themeProvider.themeMode == ThemeMode.dark
+                      ? Colors.white
+                      : Colors.black,
                 ),
               ),
             ),
             SizedBox(height: 30),
             Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    icon: Icon(Icons.person, color: Colors.white),
-                    label: Text('Go to Profile',
-                        style: TextStyle(color: Colors.white)),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => UserProfilePage(
-                            userData: widget.friendData,
-                            relationshipStatus: isFriend
-                                ? 'remove'
-                                : hasSentRequest
-                                    ? 'cancel'
-                                    : hasReceivedRequest
-                                        ? 'accept'
-                                        : 'add',
-                          ),
+                _buildSection(
+                  context: context,
+                  title: 'Go to Profile',
+                  icon: Icons.person,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => UserProfilePage(
+                          userData: widget.friendData,
+                          relationshipStatus: isFriend
+                              ? 'remove'
+                              : hasSentRequest
+                              ? 'cancel'
+                              : hasReceivedRequest
+                              ? 'accept'
+                              : 'add',
                         ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      alignment: Alignment.centerLeft,
-                      padding: EdgeInsets.symmetric(horizontal: 16.0),
-                    ),
-                  ),
+                      ),
+                    );
+                  },
+                  showDivider: true,
                 ),
-                SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    icon: Icon(Icons.call, color: Colors.white),
-                    label: Text('Voice Call',
-                        style: TextStyle(color: Colors.white)),
-                    onPressed: () {
-                      // Add your functionality here
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      alignment: Alignment.centerLeft,
-                      padding: EdgeInsets.symmetric(horizontal: 16.0),
-                    ),
-                  ),
+                _buildSection(
+                  context: context,
+                  title: 'Voice Call',
+                  icon: Icons.call,
+                  onTap: () {
+                  },
+                  showDivider: true,
                 ),
-                SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    icon: Icon(Icons.videocam, color: Colors.white),
-                    label: Text('Video Call',
-                        style: TextStyle(color: Colors.white)),
-                    onPressed: () {
-                      // Add your functionality here
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      alignment: Alignment.centerLeft,
-                      padding: EdgeInsets.symmetric(horizontal: 16.0),
-                    ),
-                  ),
+                _buildSection(
+                  context: context,
+                  title: 'Video Call',
+                  icon: Icons.videocam,
+                  onTap: () {
+                  },
+                  showDivider: true,
                 ),
-                SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    icon: Icon(Icons.edit, color: Colors.white),
-                    label: Text('Change Nickname',
-                        style: TextStyle(color: Colors.white)),
-                    onPressed: () {
-                      // Add your functionality here
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      alignment: Alignment.centerLeft,
-                      padding: EdgeInsets.symmetric(horizontal: 16.0),
-                    ),
-                  ),
+                _buildSection(
+                  context: context,
+                  title: 'Change Nickname',
+                  icon: Icons.edit,
+                  onTap: () {
+                  },
+                  showDivider: true,
                 ),
-                SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    icon: Icon(Icons.search, color: Colors.white),
-                    label: Text('Find Message',
-                        style: TextStyle(color: Colors.white)),
-                    onPressed: () {
-                      // Add your functionality here
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      alignment: Alignment.centerLeft,
-                      padding: EdgeInsets.symmetric(horizontal: 16.0),
-                    ),
-                  ),
+                _buildSection(
+                  context: context,
+                  title: 'Find Message',
+                  icon: Icons.search,
+                  onTap: () {
+                  },
+                  showDivider: true,
                 ),
-                SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    icon: Icon(Icons.delete, color: Colors.white),
-                    label: Text('Delete Chat',
-                        style: TextStyle(color: Colors.white)),
-                    onPressed: () {
-                      // Add your functionality here
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      alignment: Alignment.centerLeft,
-                      padding: EdgeInsets.symmetric(horizontal: 16.0),
-                    ),
-                  ),
+                _buildSection(
+                  context: context,
+                  title: 'Delete Chat',
+                  icon: Icons.delete,
+                  onTap: () {
+                  },
+                  showDivider: true,
                 ),
-                SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    icon: Icon(Icons.block, color: Colors.white),
-                    label: Text('Block User',
-                        style: TextStyle(color: Colors.white)),
-                    onPressed: () {
-                      // Add your functionality here
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      alignment: Alignment.centerLeft,
-                      padding: EdgeInsets.symmetric(horizontal: 16.0),
-                    ),
-                  ),
+                _buildSection(
+                  context: context,
+                  title: 'Block User',
+                  icon: Icons.block,
+                  onTap: () {
+                  },
+                  showDivider: false, // Last item does not need a divider
                 ),
               ],
-            ),
+            )
           ],
         ),
       ),
     );
   }
+
+  Widget _buildSection({
+    required BuildContext context,
+    required String title,
+    required IconData icon,
+    required VoidCallback onTap,
+    bool showDivider = true,
+  }) {
+    return Column(
+      children: [
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
+            color: Colors.transparent, // Transparent to let the parent container's color show through
+            width: double.infinity, // Full width
+            padding: const EdgeInsets.fromLTRB(0, 16, 8, 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(icon, size: 30, color: Colors.lightBlue),
+                    SizedBox(width: 10),
+                    Text(
+                      title,
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                Icon(Icons.arrow_forward_ios_sharp, size: 15, color: Colors.white),
+              ],
+            ),
+          ),
+        ),
+        if (showDivider) ...[
+          SizedBox(height: 5),
+          Row(
+            children: [
+              SizedBox(width: 40), // Adjust this width to match the icon's width plus margin
+              Expanded(
+                child: Divider(thickness: 1.0, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+          SizedBox(height: 5),
+        ],
+      ],
+    );
+  }
+
+
 }

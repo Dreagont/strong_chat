@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:strong_chat/auth/LoginPage.dart';
 import 'package:strong_chat/pages/HomePage.dart';
 
+import '../services/notification_service.dart';
+
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
 
@@ -13,6 +15,7 @@ class AuthGate extends StatelessWidget {
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
           if (snapshot.hasData && snapshot.data != null) {
+            LocalNotificationService().uploadFcmToken();
             return HomeScreen(id: snapshot.data!.uid);
           } else {
             return LoginPage();

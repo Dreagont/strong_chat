@@ -2,17 +2,21 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:camera/camera.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
 import 'package:strong_chat/chat/ChatMore.dart';
 import 'package:strong_chat/services/AuthService.dart';
 import 'package:strong_chat/services/FireStoreService.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 
+import '../call/Videocall.dart';
+import '../pages/ChangeTheme.dart';
 import '../services/StorageService.dart';
 import '../utils/Utils.dart';
 import 'ChatUtils/ImageWithPlaceholder.dart';
@@ -246,13 +250,17 @@ class _ChatPageState extends State<ChatPage> {
     return DateFormat('HH:mm dd/MM/yyyy').format(messageTime);
   }
 
+
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     final userId = authService.getCurrentUserId();
     final lastName = widget.nickname.split(' ').last;
 
     return Scaffold(
       appBar: AppBar(
+        iconTheme: IconThemeData(color: Colors.white),
         title: Row(
           children: [
             CircleAvatar(
@@ -264,22 +272,43 @@ class _ChatPageState extends State<ChatPage> {
               child: Text(
                 lastName,
                 overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: Colors.white),
               ),
             ),
           ],
         ),
-        backgroundColor: Colors.grey[900],
+        backgroundColor: themeProvider.themeMode == ThemeMode.dark
+            ? Colors.grey[850]
+            : Colors.blue,
         actions: [
           IconButton(
             icon: Icon(Icons.call_outlined),
-            onPressed: () {
-              print("On develop Call");
+            color: Colors.white,
+            onPressed: () async {
+              final cameras = await availableCameras();
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => VideoCallPage(
+                        cameras: cameras,
+                        isCameraOn: false,)
+                  )
+              );
             },
           ),
           IconButton(
             icon: Icon(Icons.videocam_outlined),
-            onPressed: () {
-              print("On develop VideoCall");
+            color: Colors.white,
+            onPressed: () async {
+              final cameras = await availableCameras();
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => VideoCallPage(
+                        cameras: cameras,
+                        isCameraOn: true,)
+                  )
+              );
             },
           ),
           IconButton(
@@ -287,15 +316,16 @@ class _ChatPageState extends State<ChatPage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => ChatMore(
-                  nickname: widget.nickname,
-                  friendData: widget.friendData,
-                  allMessages : allMessages
-                  )
+                    builder: (context) => ChatMore(
+                        nickname: widget.nickname,
+                        friendData: widget.friendData,
+                        allMessages : allMessages
+                    )
                 ),
               );
             },
             icon: Icon(Icons.more_vert),
+            color: Colors.white,
           ),
         ],
       ),

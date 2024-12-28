@@ -1,10 +1,11 @@
-import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../services/AuthService.dart';
 import '../services/FireStoreService.dart';
+import 'ChangeTheme.dart';
 import 'contacts/ContactsPage.dart';
 import 'MessagesPage.dart';
 import 'ProfilePage.dart';
@@ -62,11 +63,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     return Scaffold(
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(kToolbarHeight),
         child: Container(
-          color: Colors.grey[900],
+          color: themeProvider.themeMode == ThemeMode.dark
+              ? Colors.grey[900]
+              : Colors.blue,
           padding: const EdgeInsets.symmetric(horizontal: 8.0),
           child: SafeArea(
             child: Row(
@@ -75,13 +80,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 Icon(Icons.search_sharp, color: Colors.white, size: 30),
                 SizedBox(width: 15),
                 Expanded(
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Tìm kiếm',
-                      border: InputBorder.none,
-                      hintStyle: TextStyle(color: Colors.white60, fontSize: 18),
+                  child: Focus(
+                    onFocusChange: (hasFocus) {
+                      if (hasFocus) {
+                        // handle focus change
+                      }
+                    },
+                    child: TextField(
+                      decoration: InputDecoration(
+                        hintText: 'Tìm kiếm',
+                        border: InputBorder.none,
+                        hintStyle: TextStyle(color: Colors.white60, fontSize: 18),
+                      ),
+                      style: TextStyle(color: Colors.white, fontSize: 18),
                     ),
-                    style: TextStyle(color: Colors.white, fontSize: 18),
                   ),
                 ),
                 IconButton(
@@ -98,7 +110,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-      body: IndexedStack(
+    body: IndexedStack(
         index: _selectedIndex,
         children: _pages,
       ),
@@ -135,5 +147,4 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
 }

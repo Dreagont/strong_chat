@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:strong_chat/pages/ChangeTheme.dart';
 
 class ChatTile extends StatelessWidget {
   final String messType;
@@ -9,6 +10,7 @@ class ChatTile extends StatelessWidget {
   final String senderPrefix;
   final DateTime timestamp;
   final void Function()? onTap;
+  final ThemeProvider theme;
 
   const ChatTile({
     super.key,
@@ -19,6 +21,7 @@ class ChatTile extends StatelessWidget {
     required this.senderPrefix,
     required this.timestamp,
     this.onTap,
+    required this.theme,
   });
 
   @override
@@ -52,35 +55,42 @@ class ChatTile extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
-      child: Column(
-        children: [
-          ListTile(
-            contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0), // Add spacing inside ListTile
-            leading: CircleAvatar(
-              backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
-              radius: 25,
-              child: avatar.isEmpty ? const Icon(Icons.person, size: 30) : null,
+      child: Container(
+        color: theme.themeMode == ThemeMode.dark
+            ? Colors.black
+            : Colors.white,
+        child: Column(
+          children: [
+            ListTile(
+              contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0), // Add spacing inside ListTile
+              leading: CircleAvatar(
+                backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
+                radius: 25,
+                child: avatar.isEmpty ? const Icon(Icons.person, size: 30) : null,
+              ),
+              title: Text(
+                name,
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+              subtitle: Text(
+                "$senderPrefix$displayMessage",
+                style: messageStyle,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+              trailing: Text(
+                formattedTime,
+                style: TextStyle(color: Colors.grey[600]),
+              ),
             ),
-            title: Text(
-              name,
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            Padding(
+              padding: const EdgeInsets.only(left: 85), // Adjust this value as needed to align with the text start
+              child: Divider(color: theme.themeMode == ThemeMode.dark
+                  ? Colors.grey[900]
+                  : Colors.grey[100], thickness: 1, height: 1), // Set divider color to grey[900]
             ),
-            subtitle: Text(
-              "$senderPrefix$displayMessage",
-              style: messageStyle,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-            ),
-            trailing: Text(
-              formattedTime,
-              style: TextStyle(color: Colors.grey[600]),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 85), // Adjust this value as needed to align with the text start
-            child: Divider(thickness: 1, color: Colors.grey[900], height: 1), // Set divider color to grey[900]
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

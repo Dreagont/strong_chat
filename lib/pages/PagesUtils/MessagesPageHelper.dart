@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:strong_chat/pages/ChangeTheme.dart';
 import 'package:strong_chat/services/FireStoreService.dart';
 import '../../UI_Widgets/ChatTile.dart';
 import '../../chat/ChatPage.dart';
 
+
 enum ChatOption { editNickname, hide, toggleBlock, reset }
 
 Widget createChatTile({
+  required ThemeProvider theme,
   required BuildContext context,
   required Map<String, dynamic> friendData,
   required String currentUserId,
@@ -41,6 +44,7 @@ Widget createChatTile({
             onOptionsSelected
         ),
         child: ChatTile(
+          theme: theme,
           messType: lastMessageDoc["messType"],
           name: nickname,
           avatar: friendData["avatar"],

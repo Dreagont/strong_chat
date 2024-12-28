@@ -1,8 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:flutter/material.dart';
 
 import '../classes/MessageClass.dart';
 import 'AuthService.dart';
+import 'notification_service.dart';
 
 class FireStoreService {
   final FirebaseFirestore fireStore = FirebaseFirestore.instance;
@@ -10,22 +11,6 @@ class FireStoreService {
   final Set<String> activeListeners = {}; // Track active listeners
 
   // Send notification using Awesome Notifications
-  void _sendNotification(
-      {required String title,
-      required String body,
-      required String senderName}) {
-    print('Sending notification: $title - $body from $senderName');
-    AwesomeNotifications().createNotification(
-      content: NotificationContent(
-        id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
-        channelKey: 'chat_notifications',
-        title: title,
-        body: body,
-        notificationLayout: NotificationLayout.Default,
-        summary: 'From $senderName', // Adding sender's name in the summary
-      ),
-    );
-  }
 
   void listenForNewMessages(String userId) {
     fireStore
@@ -52,7 +37,6 @@ class FireStoreService {
     }
 
     activeListeners.add(chatBoxId); // Add to active listeners
-    print('Setting up listener for chatBoxId: $chatBoxId');
 
     fireStore
         .collection("ChatRoom")
@@ -65,23 +49,36 @@ class FireStoreService {
         final messageData = snapshot.docs.first.data();
         final senderId = messageData['senderId'];
         final message = messageData['message'];
+        final messageType = messageData['messType'];
 
-        // Only proceed if the sender is not the current user
         if (senderId != userId) {
           if (!(messageData['isNoti_isDeliver'] ?? true)) {
             final senderName = await getSenderName(senderId);
-            _sendNotification(
-              title: 'New message from $senderName',
-              body: message,
-              senderName: senderName, // Pass sender name to notification
-            );
+            final userToken = await getUserToken(userId);
+
+            try{
+              NotificationService().pushNotification(
+                  title: "New Message From $senderName",
+                  body: messageType == 'text' ? message : 'Đã gửi 1 file',
+                  token: userToken
+              );
             snapshot.docs.first.reference.update({'isNoti_isDeliver': true});
+          } catch(e){
+              print("Failed to send notification: $e");
+            }
           }
         }
       }
     });
   }
 
+  Future<String> getUserToken(String userID) async{
+    final userDoc = await fireStore.collection("Users").doc(userID).get();
+    if (userDoc.exists) {
+      return userDoc['notificationToken'];
+    }
+    return 'Unknown';
+  }
 
   // Helper method to get sender's name
   Future<String> getSenderName(String senderId) async {
@@ -192,11 +189,36 @@ class FireStoreService {
   }
 
   Future<void> _saveMessageToChatRoom(String chatBoxId, Message message) async {
-    await fireStore
-        .collection("ChatRoom")
-        .doc(chatBoxId)
-        .collection("messages")
-        .add(message.MessToMap());
+    DocumentReference? messageRef;
+
+    try {
+      messageRef = await fireStore
+          .collection("ChatRoom")
+          .doc(chatBoxId)
+          .collection("messages")
+          .add(message.MessToMap());
+    } catch (e) {
+      debugPrint('Error saving message to Firestore: $e');
+      return; // Kết thúc nếu không lưu được tin nhắn
+    }
+
+    try {
+      final friendToken = await getUserToken(message.friendId);
+
+      final isNotificationSent = await NotificationService().pushNotification(
+        title: 'New Message From ${message.friendId}',
+        body: message.messType == 'text' ? message.message : 'Đã gửi 1 file',
+        token: friendToken,
+      );
+
+      // Nếu thông báo gửi thành công, cập nhật isNoti_isDeliver
+      if (isNotificationSent && messageRef != null) {
+        await messageRef.update({'isNoti_isDeliver': true});
+      }
+    } catch (e) {
+      debugPrint('Error sending notification: $e');
+      // Không cần return, chỉ log lỗi
+    }
   }
 
   Stream<bool> getIsBlockedStream(String userId, String friendId) {
