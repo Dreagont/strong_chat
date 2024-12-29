@@ -23,12 +23,12 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   final FireStoreService fireStoreService = FireStoreService();
   final AuthService authService = AuthService();
+  FocusNode _focusNode = FocusNode(); // FocusNode to manage TextField focus
 
   @override
   void initState() {
     super.initState();
     final String currentUserId = widget.id;
-
     fireStoreService.listenForNewMessages(currentUserId);
   }
 
@@ -62,6 +62,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
+  void dispose() {
+    _focusNode.dispose(); // Dispose the FocusNode when the widget is disposed
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
 
@@ -80,13 +86,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 Icon(Icons.search_sharp, color: Colors.white, size: 30),
                 SizedBox(width: 15),
                 Expanded(
-                  child: Focus(
-                    onFocusChange: (hasFocus) {
-                      if (hasFocus) {
-                        // handle focus change
-                      }
+                  child: GestureDetector(
+                    onTap: () {
+                      _focusNode.unfocus(); // Unfocus TextField when tapping outside
                     },
                     child: TextField(
+                      focusNode: _focusNode, // Assign FocusNode directly here
                       decoration: InputDecoration(
                         hintText: 'Tìm kiếm',
                         border: InputBorder.none,
@@ -110,7 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-    body: IndexedStack(
+      body: IndexedStack(
         index: _selectedIndex,
         children: _pages,
       ),

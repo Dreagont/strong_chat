@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:provider/provider.dart';
+import 'package:strong_chat/pages/ChangeTheme.dart';
 
 import '../../UI_Widgets/InputBox.dart';
 import '../../services/AuthService.dart';
@@ -34,26 +36,34 @@ class UserInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final color = themeProvider.themeMode == ThemeMode.dark? Colors.white : Colors.grey;
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 30.0),
-      child: Row(
-        children: [
-          IconButton(
-            icon: Icon(Icons.attach_file),
-            onPressed: () => showMediaOptions(context),
-          ),
-          Expanded(
-            child: InputBox(
-              hint: "Type your message",
-              controller: messController,
-              focusNode: focusNode,
+      padding: const EdgeInsets.fromLTRB(0,0,0,0),
+      child: Container(
+        color: themeProvider.themeMode == ThemeMode.dark ? Colors.grey[900] : Colors.white,
+        child: Row(
+          children: [
+            IconButton(
+              color: color,
+              icon: Icon(Icons.attach_file),
+              onPressed: () => showMediaOptions(context),
             ),
-          ),
-          IconButton(
-            onPressed: () => sendTextMessage(),
-            icon: Icon(Icons.send),
-          ),
-        ],
+            Expanded(
+              child: InputBox(
+                hint: "Type your message",
+                controller: messController,
+                focusNode: focusNode,
+              ),
+            ),
+            IconButton(
+              color: color,
+              onPressed: () => sendTextMessage(),
+              icon: Icon(Icons.send),
+            ),
+          ],
+        ),
       ),
     );
   }

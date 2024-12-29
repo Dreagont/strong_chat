@@ -69,7 +69,7 @@ class _MyAppState extends State<MyApp> {
                 backgroundColor: Colors.grey[850],
               ),
             ),
-            themeMode: themeProvider.themeMode ?? ThemeMode.light,
+            themeMode: themeProvider.themeMode,
           );
         },
       ),

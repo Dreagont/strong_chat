@@ -29,11 +29,11 @@ class ChatPage extends StatefulWidget {
   final String nickname;
   final Map<String, dynamic> friendData;
 
-  const ChatPage(
-      {super.key,
-      required this.friendData,
-      required this.nickname,
-      });
+  const ChatPage({
+    super.key,
+    required this.friendData,
+    required this.nickname,
+  });
 
   @override
   _ChatPageState createState() => _ChatPageState();
@@ -81,7 +81,9 @@ class _ChatPageState extends State<ChatPage> {
 
   void _setupBlockedStream() {
     final userId = authService.getCurrentUserId();
-    chatService.getIsBlockedStream(userId, widget.friendData['id']).listen((blocked) {
+    chatService
+        .getIsBlockedStream(userId, widget.friendData['id'])
+        .listen((blocked) {
       setState(() {
         isBlocked = blocked;
       });
@@ -92,36 +94,43 @@ class _ChatPageState extends State<ChatPage> {
 
   void _setupMessageStream() {
     final userId = authService.getCurrentUserId();
-    _messageSubscription = chatService.getMessage(userId, widget.friendData['id']).listen((snapshot) {
+    _messageSubscription = chatService
+        .getMessage(userId, widget.friendData['id'])
+        .listen((snapshot) {
       if (snapshot.docs.isNotEmpty) {
         setState(() {
-          var newMessages = snapshot.docs.map((doc) {
-            Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-            return {
-              'id': doc.id,
-              'message': data['message'],
-              'messType': data['messType'],
-              'timeStamp': data['timeStamp'],
-              'senderId': data['senderId'],
-              'fileName': data['fileName'],
-              'isNoti_isDeliver': data['isNoti_isDeliver'],
-              'isRead': data['isRead'],
-              'likes': List<String>.from(data['likes'] ?? []),
-              'deletedBy': List<String>.from(data['deletedBy'] ?? []),
-            };
-          }).where((msg) => !msg['deletedBy'].contains(userId)).toList();
+          var newMessages = snapshot.docs
+              .map((doc) {
+                Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+                return {
+                  'id': doc.id,
+                  'message': data['message'],
+                  'messType': data['messType'],
+                  'timeStamp': data['timeStamp'],
+                  'senderId': data['senderId'],
+                  'fileName': data['fileName'],
+                  'isNoti_isDeliver': data['isNoti_isDeliver'],
+                  'isRead': data['isRead'],
+                  'likes': List<String>.from(data['likes'] ?? []),
+                  'deletedBy': List<String>.from(data['deletedBy'] ?? []),
+                };
+              })
+              .where((msg) => !msg['deletedBy'].contains(userId))
+              .toList();
 
-          newMessages.sort((a, b) => (b['timeStamp'] as Timestamp).compareTo(a['timeStamp'] as Timestamp));
+          newMessages.sort((a, b) => (b['timeStamp'] as Timestamp)
+              .compareTo(a['timeStamp'] as Timestamp));
 
           allMessages = newMessages;
 
           mediaItems = newMessages
-              .where((msg) => msg['messType'] == 'image' || msg['messType'] == 'video')
+              .where((msg) =>
+                  msg['messType'] == 'image' || msg['messType'] == 'video')
               .map((msg) => MediaItem(
-            url: msg['message'] as String,
-            isVideo: msg['messType'] == 'video',
-            fileName: msg['fileName'] ?? 'unname',
-          ))
+                    url: msg['message'] as String,
+                    isVideo: msg['messType'] == 'video',
+                    fileName: msg['fileName'] ?? 'unname',
+                  ))
               .toList()
               .reversed
               .toList();
@@ -142,7 +151,7 @@ class _ChatPageState extends State<ChatPage> {
 
             if (currentDisplayCount > messagesPerPage) {
               var lastVisibleIndex = allMessages.indexWhere(
-                      (msg) => msg['timeStamp'] == lastVisibleTimestamp);
+                  (msg) => msg['timeStamp'] == lastVisibleTimestamp);
               if (lastVisibleIndex != -1) {
                 displayedMessages = allMessages
                     .sublist(0, min(lastVisibleIndex + 1, allMessages.length))
@@ -157,14 +166,14 @@ class _ChatPageState extends State<ChatPage> {
 
   void _handleLikeMessage(String messageId, bool isLiked) async {
     final userId = authService.getCurrentUserId();
-    await chatService.toggleMessageLike(userId, widget.friendData['id'], messageId);
+    await chatService.toggleMessageLike(
+        userId, widget.friendData['id'], messageId);
   }
 
   void _handleDeleteMessage(String messageId) async {
     final userId = authService.getCurrentUserId();
     await chatService.deleteMessage(userId, widget.friendData['id'], messageId);
   }
-
 
   void _scrollListener() {
     if (scrollController.hasClients &&
@@ -250,7 +259,6 @@ class _ChatPageState extends State<ChatPage> {
     return DateFormat('HH:mm dd/MM/yyyy').format(messageTime);
   }
 
-
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
@@ -259,6 +267,9 @@ class _ChatPageState extends State<ChatPage> {
     final lastName = widget.nickname.split(' ').last;
 
     return Scaffold(
+      backgroundColor: themeProvider.themeMode == ThemeMode.dark
+          ? Colors.black
+          : Colors.blueGrey[100],
       appBar: AppBar(
         iconTheme: IconThemeData(color: Colors.white),
         title: Row(
@@ -290,10 +301,9 @@ class _ChatPageState extends State<ChatPage> {
                   context,
                   MaterialPageRoute(
                       builder: (context) => VideoCallPage(
-                        cameras: cameras,
-                        isCameraOn: false,)
-                  )
-              );
+                            cameras: cameras,
+                            isCameraOn: false,
+                          )));
             },
           ),
           IconButton(
@@ -305,10 +315,9 @@ class _ChatPageState extends State<ChatPage> {
                   context,
                   MaterialPageRoute(
                       builder: (context) => VideoCallPage(
-                        cameras: cameras,
-                        isCameraOn: true,)
-                  )
-              );
+                            cameras: cameras,
+                            isCameraOn: true,
+                          )));
             },
           ),
           IconButton(
@@ -319,9 +328,7 @@ class _ChatPageState extends State<ChatPage> {
                     builder: (context) => ChatMore(
                         nickname: widget.nickname,
                         friendData: widget.friendData,
-                        allMessages : allMessages
-                    )
-                ),
+                        allMessages: allMessages)),
               );
             },
             icon: Icon(Icons.more_vert),
@@ -333,15 +340,16 @@ class _ChatPageState extends State<ChatPage> {
         children: [
           Expanded(
             child: MessageList(
-              displayedMessages: displayedMessages,
-              allMessages: allMessages,
-              scrollController: scrollController,
-              isLoadingMore: isLoadingMore,
-              formatTimestamp: formatTimestamp,
-            ),
+                displayedMessages: displayedMessages,
+                allMessages: allMessages,
+                scrollController: scrollController,
+                isLoadingMore: isLoadingMore,
+                formatTimestamp: formatTimestamp,
+                themeProvider: themeProvider),
           ),
           StreamBuilder<bool>(
-            stream: chatService.isBlockedHimStream(userId, widget.friendData['id']),
+            stream:
+                chatService.isBlockedHimStream(userId, widget.friendData['id']),
             builder: (context, snapshot) {
               bool amIBlockedThisUser = snapshot.data ?? false;
 
@@ -361,7 +369,8 @@ class _ChatPageState extends State<ChatPage> {
                       ),
                       ElevatedButton(
                         onPressed: () {
-                          chatService.blockActionUserForFriend(userId, widget.friendData['id']);
+                          chatService.blockActionUserForFriend(
+                              userId, widget.friendData['id']);
                         },
                         child: Text("Unblock"),
                         style: ElevatedButton.styleFrom(
@@ -410,6 +419,7 @@ class _ChatPageState extends State<ChatPage> {
     required ScrollController scrollController,
     required bool isLoadingMore,
     required String Function(Timestamp) formatTimestamp,
+    required ThemeProvider themeProvider,
   }) {
     String userId = authService.getCurrentUserId();
 
@@ -423,7 +433,8 @@ class _ChatPageState extends State<ChatPage> {
           return Container(
             padding: EdgeInsets.all(16),
             alignment: Alignment.center,
-            child: isLoadingMore ? CircularProgressIndicator() : SizedBox.shrink(),
+            child:
+                isLoadingMore ? CircularProgressIndicator() : SizedBox.shrink(),
           );
         }
 
@@ -434,27 +445,27 @@ class _ChatPageState extends State<ChatPage> {
         if (!showTimestamp && index < displayedMessages.length - 1) {
           Timestamp nextTimestamp = displayedMessages[index + 1]["timeStamp"];
           showTimestamp = currentTimestamp
-              .toDate()
-              .difference(nextTimestamp.toDate())
-              .inHours >
+                  .toDate()
+                  .difference(nextTimestamp.toDate())
+                  .inHours >
               3;
         }
 
         String deliverStatus = '';
-        if(index ==0){
-          if(data['isRead']== true){
+        if (index == 0) {
+          if (data['isRead'] == true) {
             deliverStatus = 'Seen';
-          }else if(data['isNoti_isDeliver']==true){
+          } else if (data['isNoti_isDeliver'] == true) {
             deliverStatus = "Received";
-          }else{
+          } else {
             deliverStatus = "Delivered";
           }
         }
 
-
         return Column(
           children: [
-            MessBoxWithData(data, showTimestamp, formatTimestamp),
+            MessBoxWithData(
+                data, showTimestamp, formatTimestamp, themeProvider),
             if (index == 0 && data['senderId'] == userId) ...[
               Padding(
                 padding: const EdgeInsets.only(right: 25.0),
@@ -472,15 +483,18 @@ class _ChatPageState extends State<ChatPage> {
               ),
               SizedBox(height: 10),
             ],
-            if(index == 0 && data['senderId'] != userId)
-              SizedBox(height: 10,)
+            if (index == 0 && data['senderId'] != userId)
+              SizedBox(
+                height: 10,
+              )
           ],
         );
       },
     );
   }
 
-  void _confirmDownload(BuildContext context, String? fileUrl, String? fileName) {
+  void _confirmDownload(
+      BuildContext context, String? fileUrl, String? fileName) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -555,18 +569,27 @@ class _ChatPageState extends State<ChatPage> {
     int keepLength = (maxLength ~/ 2) - 2;
     String extension = fileName.split('.').last;
     String baseName = fileName.substring(0, keepLength);
-    String endName = fileName.substring(fileName.length - keepLength - extension.length - 1);
+    String endName =
+        fileName.substring(fileName.length - keepLength - extension.length - 1);
 
     return '$baseName...$endName';
   }
 
-
   Widget MessBoxWithData(Map<String, dynamic> data, bool showTimestamp,
-      String Function(Timestamp) formatTimestamp) {
+      String Function(Timestamp) formatTimestamp, ThemeProvider themeProvider) {
     bool isMyMess = data['senderId'] == authService.getCurrentUserId();
     String currentUserId = authService.getCurrentUserId();
     var alignment = isMyMess ? Alignment.centerRight : Alignment.centerLeft;
-    var messageColor = isMyMess ? Colors.blue : Colors.grey;
+    var messageColor;
+    if (isMyMess) {
+      messageColor = themeProvider.themeMode == ThemeMode.dark
+          ? Colors.cyan[700]
+          : Colors.lightBlue;
+    } else {
+      messageColor = themeProvider.themeMode == ThemeMode.dark
+          ? Colors.grey[900]
+          : Colors.white;
+    }
     double screenWidth = MediaQuery.of(context).size.width;
 
     List<String> deletedBy = List<String>.from(data['deletedBy'] ?? []);
@@ -595,10 +618,12 @@ class _ChatPageState extends State<ChatPage> {
                   Icons.favorite,
                   color: isLikedByCurrentUser ? Colors.red : null,
                 ),
-                title: Text(isLikedByCurrentUser ? "Unlike Message" : "Like Message"),
+                title: Text(
+                    isLikedByCurrentUser ? "Unlike Message" : "Like Message"),
                 onTap: () {
                   Navigator.pop(context);
-                  _handleLikeMessage(data['id'], isLikedByCurrentUser);                },
+                  _handleLikeMessage(data['id'], isLikedByCurrentUser);
+                },
               ),
               ListTile(
                 leading: Icon(Icons.delete),
@@ -614,7 +639,8 @@ class _ChatPageState extends State<ChatPage> {
                   title: Text("Undo Send"),
                   onTap: () {
                     Navigator.pop(context);
-                    chatService.undoSentMessage(currentUserId, widget.friendData['id'], data['timeStamp']);
+                    chatService.undoSentMessage(currentUserId,
+                        widget.friendData['id'], data['timeStamp']);
                   },
                 ),
               if (data["messType"] == null || data["messType"] == "text")
@@ -623,7 +649,8 @@ class _ChatPageState extends State<ChatPage> {
                   title: Text("Copy"),
                   onTap: () {
                     Navigator.pop(context);
-                    Clipboard.setData(ClipboardData(text: data["message"] ?? ''));
+                    Clipboard.setData(
+                        ClipboardData(text: data["message"] ?? ''));
                   },
                 ),
               ListTile(
@@ -644,7 +671,7 @@ class _ChatPageState extends State<ChatPage> {
       alignment: alignment,
       child: Column(
         crossAxisAlignment:
-        isMyMess ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+            isMyMess ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           if (showTimestamp)
             Padding(
@@ -667,16 +694,16 @@ class _ChatPageState extends State<ChatPage> {
                 onLongPress: () => showOptionsMenu(context),
                 child: Container(
                   decoration: (data["messType"] == "image" ||
-                      data["messType"] == "video" ||
-                      data["messType"] == "holder")
+                          data["messType"] == "video" ||
+                          data["messType"] == "holder")
                       ? null
                       : BoxDecoration(
-                    color: messageColor,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                          color: messageColor,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                   padding: (data["messType"] == "image" ||
-                      data["messType"] == "video" ||
-                      data["messType"] == "holder")
+                          data["messType"] == "video" ||
+                          data["messType"] == "holder")
                       ? null
                       : EdgeInsets.all(16),
                   margin: EdgeInsets.symmetric(vertical: 5, horizontal: 25),
@@ -684,98 +711,128 @@ class _ChatPageState extends State<ChatPage> {
                     constraints: BoxConstraints(maxWidth: 2 / 4 * screenWidth),
                     child: data["messType"] == "image"
                         ? ImageWithPlaceholder(
-                      imageUrl: data["message"] ?? '',
-                      mediaUrls: mediaItems,
-                    )
+                            imageUrl: data["message"] ?? '',
+                            mediaUrls: mediaItems,
+                          )
                         : data["messType"] == "video"
-                        ? VideoPlayerWidget(
-                      videoUrl: data["message"] ?? '',
-                      mediaUrls: mediaItems,
-                    )
-                        : data["messType"] == "VHolder"
-                        ? Container(
-                      height: 100,
-                      width: 250,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          CircularProgressIndicator(),
-                          Positioned(
-                            bottom: 10,
-                            child: Text(
-                              'Uploading...',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                        : data["messType"] == "holder"
-                        ? Stack(
-                      children: [
-                        Image.file(
-                          File(data["message"]),
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Icon(
-                              Icons.error,
-                              color: Colors.white,
-                              size: 50,
-                            );
-                          },
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          child: Container(
-                            color: Colors.black54,
-                            padding: EdgeInsets.symmetric(vertical: 8),
-                            child: Text(
-                              'Uploading...',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                        : data["messType"] == "text"
-                        ? RichText(
-                      text: replaceEmoticons(data["message"] ?? ''),
-                    )
-                        : data["messType"] == "file"
-                        ? GestureDetector(
-                      onTap: () {
-                        _confirmDownload(context, data['message'], data['fileName']);
-                      },
-                      child: Row(
-                        children: [
-                          Icon(Icons.insert_drive_file,
-                              color: Colors.white),
-                          SizedBox(width: 8),
-                          Expanded(
-                              child: Text(
-                                  _formatFileName(data['fileName'], 26) ?? '',
-                                  style: TextStyle(
-                                      color: Colors.white))),
-                          IconButton(
-                            icon: Icon(Icons.download,
-                                color: Colors.white),
-                            onPressed: () {
-                              _confirmDownload(context, data['message'], data['fileName']);
-                            }
-                          ),
-                        ],
-                      ),
-                    )
-                        : Container(),
+                            ? VideoPlayerWidget(
+                                videoUrl: data["message"] ?? '',
+                                mediaUrls: mediaItems,
+                              )
+                            : data["messType"] == "VHolder"
+                                ? Container(
+                                    height: 100,
+                                    width: 250,
+                                    child: Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        CircularProgressIndicator(),
+                                        Positioned(
+                                          bottom: 10,
+                                          child: Text(
+                                            'Uploading...',
+                                            style: TextStyle(
+                                              color: themeProvider.themeMode ==
+                                                      ThemeMode.dark
+                                                  ? Colors.white
+                                                  : Colors.black,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : data["messType"] == "holder"
+                                    ? Stack(
+                                        children: [
+                                          Image.file(
+                                            File(data["message"]),
+                                            fit: BoxFit.cover,
+                                            errorBuilder:
+                                                (context, error, stackTrace) {
+                                              return Icon(
+                                                Icons.error,
+                                                color:
+                                                    themeProvider.themeMode ==
+                                                            ThemeMode.dark
+                                                        ? Colors.white
+                                                        : Colors.black,
+                                                size: 50,
+                                              );
+                                            },
+                                          ),
+                                          Positioned(
+                                            bottom: 0,
+                                            left: 0,
+                                            right: 0,
+                                            child: Container(
+                                              color: Colors.black54,
+                                              padding: EdgeInsets.symmetric(
+                                                  vertical: 8),
+                                              child: Text(
+                                                'Uploading...',
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : data["messType"] == "text"
+                                        ? Text(
+                                            data["message"] ?? '',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.normal,
+                                                color:
+                                                    themeProvider.themeMode ==
+                                                            ThemeMode.dark
+                                                        ? Colors.white
+                                                        : Colors.black,
+                                                fontSize: 16),
+                                          )
+                                        : data["messType"] == "file"
+                                            ? GestureDetector(
+                                                onTap: () {
+                                                  _confirmDownload(
+                                                      context,
+                                                      data['message'],
+                                                      data['fileName']);
+                                                },
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                        Icons.insert_drive_file,
+                                                        color: Colors.white),
+                                                    SizedBox(width: 8),
+                                                    Expanded(
+                                                        child: Text(
+                                                            _formatFileName(
+                                                                    data[
+                                                                        'fileName'],
+                                                                    26) ??
+                                                                '',
+                                                            style: TextStyle(
+                                                                color: Colors
+                                                                    .white))),
+                                                    IconButton(
+                                                        icon: Icon(
+                                                            Icons.download,
+                                                            color:
+                                                                Colors.white),
+                                                        onPressed: () {
+                                                          _confirmDownload(
+                                                              context,
+                                                              data['message'],
+                                                              data['fileName']);
+                                                        }),
+                                                  ],
+                                                ),
+                                              )
+                                            : Container(),
                   ),
                 ),
               ),
@@ -796,7 +853,9 @@ class _ChatPageState extends State<ChatPage> {
                         ),
                       ),
                       Icon(
-                        isLikedByCurrentUser ? Icons.favorite : Icons.favorite_border,
+                        isLikedByCurrentUser
+                            ? Icons.favorite
+                            : Icons.favorite_border,
                         color: Colors.red,
                         size: 20,
                       ),

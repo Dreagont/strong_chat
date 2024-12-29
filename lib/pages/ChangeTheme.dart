@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class ThemeProvider extends ChangeNotifier {
-  ThemeMode _themeMode = ThemeMode.system;
-  bool _isSystemModeSelected = true;
+  ThemeMode _themeMode = ThemeMode.light;
+  bool _isSystemModeSelected = false;
 
   ThemeMode get themeMode => _themeMode;
   bool get isSystemModeSelected => _isSystemModeSelected;
