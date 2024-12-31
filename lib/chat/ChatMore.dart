@@ -62,107 +62,103 @@ class _ChatMoreState extends State<ChatMore> {
             ? Colors.grey[850]
             : Colors.blue,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Center(
-              child: CircleAvatar(
-                radius: 50,
-                backgroundImage: NetworkImage(widget.friendData['avatar']),
-              ),
-            ),
-            SizedBox(height: 10),
-            Center(
-              child: Text(
-                widget.nickname,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: themeProvider.themeMode == ThemeMode.dark
-                      ? Colors.white
-                      : Colors.black,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Center(
+                child: CircleAvatar(
+                  radius: 50,
+                  backgroundImage: NetworkImage(widget.friendData['avatar']),
                 ),
               ),
-            ),
-            SizedBox(height: 30),
-            Column(
-              children: [
-                _buildSection(
-                  context: context,
-                  title: 'Go to Profile',
-                  icon: Icons.person,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => UserProfilePage(
-                          userData: widget.friendData,
-                          relationshipStatus: isFriend
-                              ? 'remove'
-                              : hasSentRequest
-                              ? 'cancel'
-                              : hasReceivedRequest
-                              ? 'accept'
-                              : 'add',
+              SizedBox(height: 10),
+              Center(
+                child: Text(
+                  widget.nickname,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: themeProvider.themeMode == ThemeMode.dark
+                        ? Colors.white
+                        : Colors.black,
+                  ),
+                ),
+              ),
+              SizedBox(height: 30),
+              Column(
+                children: [
+                  _buildSection(
+                    context: context,
+                    title: 'Go to Profile',
+                    icon: Icons.person,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => UserProfilePage(
+                            userData: widget.friendData,
+                            relationshipStatus: isFriend
+                                ? 'remove'
+                                : hasSentRequest
+                                ? 'cancel'
+                                : hasReceivedRequest
+                                ? 'accept'
+                                : 'add',
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                  showDivider: true,
-                ),
-                _buildSection(
-                  context: context,
-                  title: 'Voice Call',
-                  icon: Icons.call,
-                  onTap: () {
-                  },
-                  showDivider: true,
-                ),
-                _buildSection(
-                  context: context,
-                  title: 'Video Call',
-                  icon: Icons.videocam,
-                  onTap: () {
-                  },
-                  showDivider: true,
-                ),
-                _buildSection(
-                  context: context,
-                  title: 'Change Nickname',
-                  icon: Icons.edit,
-                  onTap: () {
-                  },
-                  showDivider: true,
-                ),
-                _buildSection(
-                  context: context,
-                  title: 'Find Message',
-                  icon: Icons.search,
-                  onTap: () {
-                  },
-                  showDivider: true,
-                ),
-                _buildSection(
-                  context: context,
-                  title: 'Delete Chat',
-                  icon: Icons.delete,
-                  onTap: () {
-                  },
-                  showDivider: true,
-                ),
-                _buildSection(
-                  context: context,
-                  title: 'Block User',
-                  icon: Icons.block,
-                  onTap: () {
-                  },
-                  showDivider: false, // Last item does not need a divider
-                ),
-              ],
-            )
-          ],
+                      );
+                    },
+                    showDivider: true,
+                  ),
+                  _buildSection(
+                    context: context,
+                    title: 'Voice Call',
+                    icon: Icons.call,
+                    onTap: () {},
+                    showDivider: true,
+                  ),
+                  _buildSection(
+                    context: context,
+                    title: 'Video Call',
+                    icon: Icons.videocam,
+                    onTap: () {},
+                    showDivider: true,
+                  ),
+                  _buildSection(
+                    context: context,
+                    title: 'Change Nickname',
+                    icon: Icons.edit,
+                    onTap: () {},
+                    showDivider: true,
+                  ),
+                  _buildSection(
+                    context: context,
+                    title: 'Find Message',
+                    icon: Icons.search,
+                    onTap: () {},
+                    showDivider: true,
+                  ),
+                  _buildSection(
+                    context: context,
+                    title: 'Delete Chat',
+                    icon: Icons.delete,
+                    onTap: () {},
+                    showDivider: true,
+                  ),
+                  _buildSection(
+                    context: context,
+                    title: 'Block User',
+                    icon: Icons.block,
+                    onTap: () {},
+                    showDivider: false, // Last item does not need a divider
+                  ),
+                ],
+              )
+            ],
+          ),
         ),
       ),
     );
