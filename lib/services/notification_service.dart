@@ -16,7 +16,6 @@ class Constant {
 }
 
 class NotificationService {
-  /// Retrieve Firebase Access Token from Service Account
   Future<String> getAccessToken() async {
     try {
       final jsonString = await rootBundle
@@ -58,8 +57,6 @@ class NotificationService {
         },
         body: dataNotifications,
       );
-
-      debugPrint("FCM Response: ${response.body}");
       if (response.statusCode == 200) {
         return true;
       } else {
@@ -77,7 +74,6 @@ class LocalNotificationService {
   final firebaseFirestore = FirebaseFirestore.instance;
   final _currentUser = FirebaseAuth.instance.currentUser;
 
-  /// Request Notification Permissions
   Future<void> requestPermission() async {
     PermissionStatus status = await Permission.notification.request();
     if (status != PermissionStatus.granted) {
@@ -85,7 +81,6 @@ class LocalNotificationService {
     }
   }
 
-  /// Upload FCM Token to Firestore
   Future<void> uploadFcmToken() async {
     try {
       String? token = await FirebaseMessaging.instance.getToken();
@@ -106,7 +101,6 @@ class LocalNotificationService {
     }
   }
 
-  /// Clear FCM Token on Logout
   Future<void> logout() async {
     try {
       await firebaseFirestore.collection('Users').doc(_currentUser!.uid).update({
@@ -120,7 +114,6 @@ class LocalNotificationService {
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
   FlutterLocalNotificationsPlugin();
 
-  /// Initialize Local Notifications
   Future<void> init() async {
     const AndroidInitializationSettings initializationSettingsAndroid =
     AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -129,8 +122,7 @@ class LocalNotificationService {
     await flutterLocalNotificationsPlugin.initialize(initializationSettings);
   }
 
-  /// Show Local Notification
-  Future<void> showNotification(RemoteMessage message) async {
+  showNotification(RemoteMessage message) async {
     const AndroidNotificationDetails androidNotificationDetails =
     AndroidNotificationDetails(
       'channel_id',
@@ -147,57 +139,6 @@ class LocalNotificationService {
       message.notification!.title,
       message.notification!.body,
       notificationDetails,
-    );
-  }
-}
-
-/// Usage Example
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  final localNotificationService = LocalNotificationService();
-  final notificationService = NotificationService();
-
-  await localNotificationService.requestPermission();
-  await localNotificationService.init();
-  await localNotificationService.uploadFcmToken();
-
-  runApp(MyApp(
-    notificationService: notificationService,
-    localNotificationService: localNotificationService,
-  ));
-}
-
-class MyApp extends StatelessWidget {
-  final NotificationService notificationService;
-  final LocalNotificationService localNotificationService;
-
-  const MyApp({
-    required this.notificationService,
-    required this.localNotificationService,
-    Key? key,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(title: Text("FCM Notifications")),
-        body: Center(
-          child: ElevatedButton(
-            onPressed: () async {
-              // Example usage
-              bool result = await notificationService.pushNotification(
-                title: "Test Notification",
-                body: "This is a test message",
-                token: "<YOUR_DEVICE_TOKEN>",
-              );
-              debugPrint("Notification Sent: $result");
-            },
-            child: Text("Send Notification"),
-          ),
-        ),
-      ),
     );
   }
 }

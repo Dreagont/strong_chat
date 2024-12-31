@@ -66,8 +66,8 @@ class _ProfilePageState extends State<ProfilePage> {
     );
 
     if (shouldLogout == true) {
+      await LocalNotificationService().logout();
       await _authService.signout();
-      LocalNotificationService().logout();
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => LoginPage()),

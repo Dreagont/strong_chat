@@ -68,8 +68,6 @@ class UserInput extends StatelessWidget {
     );
   }
 
-
-
   void showMediaOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,

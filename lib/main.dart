@@ -30,13 +30,12 @@ class _MyAppState extends State<MyApp> {
   }
 
   void notificationHandler() {
-    FirebaseMessaging.onMessage.listen((event) async {
-      LocalNotificationService().showNotification(event);
-    });
-    FirebaseMessaging.onBackgroundMessage((RemoteMessage event) async {
+    FirebaseMessaging.onMessage.listen((event) async{
+      print(event.notification!.title);
       LocalNotificationService().showNotification(event);
     });
   }
+
 
   @override
   Widget build(BuildContext context) {

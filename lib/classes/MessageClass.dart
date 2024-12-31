@@ -10,6 +10,7 @@ class Message{
   bool isSynced;
   bool isNoti_isDeliver;
   bool isRead;
+  bool isChecked;
 
   Message({
     required this.senderId,
@@ -20,7 +21,8 @@ class Message{
     required this.fileName,
     this.isSynced = false,
     this.isNoti_isDeliver = false,
-    this.isRead = false
+    this.isRead = false,
+    this.isChecked = false
   });
 
   Map<String, dynamic> MessToMap() {
@@ -32,7 +34,8 @@ class Message{
       'timeStamp' : timestamp,
       'fileName': fileName,
       'isNoti_isDeliver': isNoti_isDeliver,
-      'isRead': isRead
+      'isRead': isRead,
+      'isChecked': isChecked
     };
   }
 }
