@@ -562,5 +562,9 @@ class FireStoreService {
     List<String> likes = List<String>.from(messageData['likes'] ?? []);
     return likes.contains(userId);
   }
+
+  Future<void> updateUserInfo(String userId, Map<String, String> userInfo) async {
+    await fireStore.collection('Users').doc(userId).update(userInfo);
+  }
 }
 

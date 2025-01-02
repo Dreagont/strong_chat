@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math';
+import 'dart:html' as html; // For web download handling
 
 import 'package:camera/camera.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -134,8 +135,6 @@ class _ChatPageState extends State<ChatPage> {
               .toList()
               .reversed
               .toList();
-
-          print(mediaItems);
 
           if (displayedMessages.isEmpty) {
             displayedMessages = allMessages.take(messagesPerPage).toList();
@@ -521,45 +520,62 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
+
   void _downloadFile(String? fileUrl, String? fileName) async {
     if (fileUrl == null || fileName == null) return;
 
-    try {
-      var response = await http.get(Uri.parse(fileUrl));
-      if (response.statusCode == 200) {
-        Directory? directory;
+    bool isWeb = identical(0, 0.0);
 
-        if (await Permission.storage.request().isGranted) {
-          if (Platform.isAndroid) {
-            directory = await getExternalStorageDirectory();
-            String newPath = "";
-            List<String> paths = directory!.path.split("/");
-            for (int x = 1; x < paths.length; x++) {
-              String folder = paths[x];
-              if (folder != "Android") {
-                newPath += "/" + folder;
-              } else {
-                break;
-              }
-            }
-            newPath = newPath + "/Download";
-            directory = Directory(newPath);
-          } else {
-            directory = await getApplicationDocumentsDirectory();
-          }
-
-          final file = File('${directory.path}/$fileName');
-          await file.writeAsBytes(response.bodyBytes);
-
-          print("File downloaded to ${file.path}");
-        } else {
-          print("Permission denied");
-        }
-      } else {
-        print("Failed to download file");
+    if (isWeb) {
+      try {
+        final anchor = html.AnchorElement(href: fileUrl)
+          ..target = 'blank'
+          ..download = fileName;
+        html.document.body?.append(anchor);
+        anchor.click();
+        anchor.remove();
+        print("File download initiated in web environment");
+      } catch (e) {
+        print("Error handling file download for web: $e");
       }
-    } catch (e) {
-      print("Error downloading file: $e");
+    } else {
+      try {
+        var response = await http.get(Uri.parse(fileUrl));
+        if (response.statusCode == 200) {
+          Directory? directory;
+
+          if (await Permission.storage.request().isGranted) {
+            if (Platform.isAndroid) {
+              directory = await getExternalStorageDirectory();
+              String newPath = "";
+              List<String> paths = directory!.path.split("/");
+              for (int x = 1; x < paths.length; x++) {
+                String folder = paths[x];
+                if (folder != "Android") {
+                  newPath += "/" + folder;
+                } else {
+                  break;
+                }
+              }
+              newPath = newPath + "/Download";
+              directory = Directory(newPath);
+            } else {
+              directory = await getApplicationDocumentsDirectory();
+            }
+
+            final file = File('${directory.path}/$fileName');
+            await file.writeAsBytes(response.bodyBytes);
+
+            print("File downloaded to ${file.path}");
+          } else {
+            print("Permission denied");
+          }
+        } else {
+          print("Failed to download file");
+        }
+      } catch (e) {
+        print("Error downloading file: $e");
+      }
     }
   }
 
@@ -743,46 +759,57 @@ class _ChatPageState extends State<ChatPage> {
                                       ],
                                     ),
                                   )
-                                : data["messType"] == "holder"
-                                    ? Stack(
-                                        children: [
-                                          Image.file(
-                                            File(data["message"]),
-                                            fit: BoxFit.cover,
-                                            errorBuilder:
-                                                (context, error, stackTrace) {
-                                              return Icon(
-                                                Icons.error,
-                                                color:
-                                                    themeProvider.themeMode ==
-                                                            ThemeMode.dark
-                                                        ? Colors.white
-                                                        : Colors.black,
-                                                size: 50,
-                                              );
-                                            },
-                                          ),
-                                          Positioned(
-                                            bottom: 0,
-                                            left: 0,
-                                            right: 0,
-                                            child: Container(
-                                              color: Colors.black54,
-                                              padding: EdgeInsets.symmetric(
-                                                  vertical: 8),
-                                              child: Text(
-                                                'Uploading...',
-                                                textAlign: TextAlign.center,
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      )
-                                    : data["messType"] == "text"
+                        : data["messType"] == "holder"
+                        ? Stack(
+                      children: [
+                        data["message"] is Uint8List
+                            ? Image.memory(
+                          data["message"],
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Icon(
+                              Icons.error,
+                              color: themeProvider.themeMode == ThemeMode.dark
+                                  ? Colors.white
+                                  : Colors.black,
+                              size: 50,
+                            );
+                          },
+                        )
+                            : Image.network(
+                          data["message"],
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Icon(
+                              Icons.error,
+                              color: themeProvider.themeMode == ThemeMode.dark
+                                  ? Colors.white
+                                  : Colors.black,
+                              size: 50,
+                            );
+                          },
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          child: Container(
+                            color: Colors.black54,
+                            padding: EdgeInsets.symmetric(vertical: 8),
+                            child: Text(
+                              'Uploading...',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+
+                        : data["messType"] == "text"
                                         ? Text(
                                             data["message"] ?? '',
                                             style: TextStyle(

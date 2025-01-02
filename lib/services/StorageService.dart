@@ -6,6 +6,7 @@ import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import 'FireStoreService.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 
 class StorageService with ChangeNotifier {
   final firebaseStorage = FirebaseStorage.instance;
@@ -19,9 +20,21 @@ class StorageService with ChangeNotifier {
   bool get getIsLoading => isLoading;
   bool get getIsUpLoading => isUploading;
 
-  Future<String> getImage(String userId, String path) async {
-    String filePath = '$path/$userId.jpg';
-    return await firebaseStorage.ref(filePath).getDownloadURL();
+  Future<XFile?> pickImage() async {
+    final ImagePicker picker = ImagePicker();
+    return await picker.pickImage(source: ImageSource.gallery);
+  }
+
+  Future<XFile?> pickVideo() async {
+    final ImagePicker picker = ImagePicker();
+    return await picker.pickVideo(source: ImageSource.gallery);
+  }
+
+  Future<FilePickerResult?> pickFile() async {
+    return await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'doc', 'docx', 'txt', 'xls', 'xlsx', 'ppt', 'pptx'],
+    );
   }
 
   Future<void> uploadAvatar(String userId, String path) async {
@@ -37,10 +50,8 @@ class StorageService with ChangeNotifier {
       return;
     }
 
-    File file = File(image.path);
-
     try {
-      Uint8List imageBytes = await file.readAsBytes();
+      Uint8List imageBytes = await image.readAsBytes(); // Use `readAsBytes` for both web and mobile
       img.Image? originalImage = img.decodeImage(imageBytes);
       if (originalImage == null) throw Exception("Failed to decode image.");
 
@@ -58,14 +69,17 @@ class StorageService with ChangeNotifier {
         );
       }
 
-      final tempFile = File('${file.parent.path}/compressed_${file.uri.pathSegments.last}');
-      await tempFile.writeAsBytes(compressedBytes);
-
       String filePath = '$path/$userId.jpg';
-      await firebaseStorage.ref(filePath).putFile(tempFile);
+
+      if (kIsWeb) {
+        await firebaseStorage.ref(filePath).putData(compressedBytes);
+      } else {
+        final tempFile = File('${image.path}_compressed.jpg');
+        await tempFile.writeAsBytes(compressedBytes);
+        await firebaseStorage.ref(filePath).putFile(tempFile);
+      }
 
       String imageUrl = await firebaseStorage.ref(filePath).getDownloadURL();
-
       _fireStoreService.updateUserAvatar(userId, imageUrl);
       notifyListeners();
     } catch (e) {
@@ -76,18 +90,12 @@ class StorageService with ChangeNotifier {
     }
   }
 
-  Future<XFile?> pickImage() async {
-    final ImagePicker picker = ImagePicker();
-    return await picker.pickImage(source: ImageSource.gallery);
-  }
-
-  Future<void> uploadImage(XFile image, String filename, String path) async {
+  Future<void> uploadImage(XFile image, String timeStamp, String path, String fullFileName) async {
     isUploading = true;
     notifyListeners();
 
-    File file = File(image.path);
     try {
-      Uint8List imageBytes = await file.readAsBytes();
+      Uint8List imageBytes = await image.readAsBytes();
       img.Image? originalImage = img.decodeImage(imageBytes);
       if (originalImage == null) throw Exception("Failed to decode image.");
 
@@ -105,11 +113,17 @@ class StorageService with ChangeNotifier {
         );
       }
 
-      final tempFile = File('${file.parent.path}/compressed_${file.uri.pathSegments.last}');
-      await tempFile.writeAsBytes(compressedBytes);
+      String fileName = fullFileName.split('.').first;
 
-      String filePath = '$path/$filename.jpg';
-      await firebaseStorage.ref(filePath).putFile(tempFile);
+      String filePath = '$path/$timeStamp/$fileName.jpg';
+
+      if (kIsWeb) {
+        await firebaseStorage.ref(filePath).putData(compressedBytes);
+      } else {
+        final tempFile = File('${image.path}_compressed.jpg');
+        await tempFile.writeAsBytes(compressedBytes);
+        await firebaseStorage.ref(filePath).putFile(tempFile);
+      }
 
       notifyListeners();
     } catch (e) {
@@ -120,19 +134,20 @@ class StorageService with ChangeNotifier {
     }
   }
 
-  Future<XFile?> pickVideo() async {
-    final ImagePicker picker = ImagePicker();
-    return await picker.pickVideo(source: ImageSource.gallery);
-  }
-
-  Future<void> uploadVideo(XFile video, String fileName, String path, String chatBoxId, String friendId) async {
+  Future<void> uploadVideo(XFile video, String timeStamp, String path, String chatBoxId, String friendId, String fullFileName) async {
     isUploading = true;
     notifyListeners();
 
-    File file = File(video.path);
     try {
-      String filePath = 'ChatData/$chatBoxId/$fileName.mp4';
-      await firebaseStorage.ref(filePath).putFile(file);
+      String filePath = 'ChatData/$chatBoxId/$timeStamp/$fullFileName';
+
+      if (kIsWeb) {
+        Uint8List fileBytes = await video.readAsBytes();
+        await firebaseStorage.ref(filePath).putData(fileBytes);
+      } else {
+        File file = File(video.path);
+        await firebaseStorage.ref(filePath).putFile(file);
+      }
 
       notifyListeners();
     } catch (e) {
@@ -143,24 +158,23 @@ class StorageService with ChangeNotifier {
     }
   }
 
-  Future<FilePickerResult?> pickFile() async {
-    return await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf', 'doc', 'docx', 'txt', 'xls', 'xlsx', 'ppt', 'pptx'],
-    );
-  }
-
-  Future<void> uploadFile(FilePickerResult result, String fileName, String path, String chatBoxId, String friendId) async {
+  Future<void> uploadFile(FilePickerResult result, String timeStamp, String path, String chatBoxId, String friendId) async {
     isUploading = true;
     notifyListeners();
 
-    File file = File(result.files.single.path!);
     String pickedFileName = result.files.single.name;
     try {
-      String filePath = 'ChatData/$chatBoxId/$fileName.${result.files.single.extension}';
-      await firebaseStorage.ref(filePath).putFile(file);
+      String filePath = 'ChatData/$chatBoxId/$timeStamp/$pickedFileName.${result.files.single.extension}';
 
-      String mess = await FirebaseStorage.instance.ref(filePath).getDownloadURL();
+      if (kIsWeb) {
+        Uint8List fileBytes = result.files.single.bytes!;
+        await firebaseStorage.ref(filePath).putData(fileBytes);
+      } else {
+        File file = File(result.files.single.path!);
+        await firebaseStorage.ref(filePath).putFile(file);
+      }
+
+      String mess = await firebaseStorage.ref(filePath).getDownloadURL();
       await _fireStoreService.sendMessage(friendId, mess, 'file', pickedFileName);
       notifyListeners();
     } catch (e) {
@@ -170,5 +184,7 @@ class StorageService with ChangeNotifier {
       notifyListeners();
     }
   }
+
+
 
 }

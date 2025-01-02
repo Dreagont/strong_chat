@@ -90,88 +90,120 @@ class _UserProfilePageState extends State<UserProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(widget.userData["name"])),
-      body: Column(
-        children: [
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundImage: NetworkImage(widget.userData["avatar"] ?? ''),
-                    child: widget.userData["avatar"] == null
-                        ? Icon(Icons.person, size: 50)
-                        : null,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    widget.userData["name"],
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    widget.userData["email"],
-                    style: TextStyle(fontSize: 16),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      FutureBuilder<String?>(
-                        future: chatService.getNickname(
-                          authService.getCurrentUserId(),
-                          widget.userData["id"],
-                        ),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return ElevatedButton(
-                              onPressed: null,
-                              child: Text("Loading..."),
-                            );
-                          }
-
-                          final nickname = snapshot.data;
-                          return ElevatedButton(
-                            onPressed: nickname != null
-                                ? () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ChatPage(
-                                    friendData: widget.userData,
-                                    nickname: nickname,
-                                  ),
-                                ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircleAvatar(
+                      radius: 50,
+                      backgroundImage: NetworkImage(widget.userData["avatar"] ?? ''),
+                      child: widget.userData["avatar"] == null
+                          ? Icon(Icons.person, size: 50)
+                          : null,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      widget.userData["name"],
+                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      widget.userData["email"],
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        FutureBuilder<String?>(
+                          future: chatService.getNickname(
+                            authService.getCurrentUserId(),
+                            widget.userData["id"],
+                          ),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState == ConnectionState.waiting) {
+                              return ElevatedButton(
+                                onPressed: null,
+                                child: Text("Loading..."),
                               );
                             }
-                                : null,
-                            child: Text("Chat"),
-                          );
-                        },
-                      ),
-                      ElevatedButton(
-                        onPressed: () => handleFriendAction(context),
-                        child: Text(
-                          relationshipStatus == 'add'
-                              ? 'Add Friend'
-                              : relationshipStatus == 'cancel'
-                              ? 'Cancel Request'
-                              : relationshipStatus == 'remove'
-                              ? 'Remove Friend'
-                              : relationshipStatus == 'accept'
-                              ? 'Accept Request'
-                              : 'Decline Request',
+
+                            final nickname = snapshot.data;
+                            return ElevatedButton(
+                              onPressed: nickname != null
+                                  ? () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ChatPage(
+                                      friendData: widget.userData,
+                                      nickname: nickname,
+                                    ),
+                                  ),
+                                );
+                              }
+                                  : (){
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ChatPage(
+                                      friendData: widget.userData,
+                                      nickname: widget.userData['name'],
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: Text("Chat"),
+                            );
+                          },
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                        ElevatedButton(
+                          onPressed: () => handleFriendAction(context),
+                          child: Text(
+                            relationshipStatus == 'add'
+                                ? 'Add Friend'
+                                : relationshipStatus == 'cancel'
+                                ? 'Cancel Request'
+                                : relationshipStatus == 'remove'
+                                ? 'Remove Friend'
+                                : relationshipStatus == 'accept'
+                                ? 'Accept Request'
+                                : 'Decline Request',
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Work: ${widget.userData["work"] ?? "unknown"}',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Date of Birth: ${widget.userData["dob"] ?? "unknown"}',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Address: ${widget.userData["address"] ?? "unknown"}',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Phone: ${widget.userData["phone"] ?? "unknown"}',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

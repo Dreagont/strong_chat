@@ -115,7 +115,7 @@ class _ScanQRCodePageState extends State<ScanQRCodePage> {
 
   @override
   Widget build(BuildContext context) {
-    bool isWeb = identical(0, 0.0); // Detect if running on web.
+    bool isWeb = identical(0, 0.0);
     return Scaffold(
       appBar: AppBar(
         title: Text('Scan QR Code'),

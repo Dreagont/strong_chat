@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:strong_chat/services/AuthService.dart';
 import 'package:strong_chat/services/FireStoreService.dart';
@@ -22,6 +23,11 @@ class _ProfilePageState extends State<ProfilePage> {
   String? _avatarUrl;
   String _userName = 'User Name';
   String _userEmail = 'user@example.com';
+  String _work = '';
+  String _dob = '';
+  String _address = '';
+  String _phone = '';
+
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
 
@@ -40,6 +46,10 @@ class _ProfilePageState extends State<ProfilePage> {
         _avatarUrl = userInfo['avatar'] as String?;
         _userName = userInfo['name'] as String? ?? 'User Name';
         _userEmail = userInfo['email'] as String? ?? 'user@example.com';
+        _work = userInfo['work'] as String? ?? 'unknown';
+        _dob = userInfo['dob'] as String? ?? 'unknown';
+        _address = userInfo['address'] as String? ?? 'unknown';
+        _phone = userInfo['phone'] as String? ?? 'unknown';
       });
     }
   }
@@ -145,7 +155,8 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                         onPressed: () {
                           setDialogState(() {
-                            isConfirmPasswordVisible = !isConfirmPasswordVisible;
+                            isConfirmPasswordVisible =
+                            !isConfirmPasswordVisible;
                           });
                         },
                       ),
@@ -272,11 +283,12 @@ class _ProfilePageState extends State<ProfilePage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => MyQRCodePage(
-          userId: _authService.getCurrentUserId(),
-          userName: _userName,
-          avatarUrl: _avatarUrl,
-        ),
+        builder: (context) =>
+            MyQRCodePage(
+              userId: _authService.getCurrentUserId(),
+              userName: _userName,
+              avatarUrl: _avatarUrl,
+            ),
       ),
     );
   }
@@ -285,7 +297,7 @@ class _ProfilePageState extends State<ProfilePage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ThemeSettingsScreen()
+          builder: (context) => ThemeSettingsScreen()
       ),
     );
   }
@@ -303,7 +315,7 @@ class _ProfilePageState extends State<ProfilePage> {
           padding: const EdgeInsets.fromLTRB(0, 0.0, 0, 8.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget> [
+            children: <Widget>[
               Container(
                 color: themeProvider.themeMode == ThemeMode.dark
                     ? Colors.grey[850]
@@ -318,7 +330,8 @@ class _ProfilePageState extends State<ProfilePage> {
                           radius: 30,
                           backgroundImage: _avatarUrl != null
                               ? NetworkImage(_avatarUrl!)
-                              : AssetImage('assets/loading.png') as ImageProvider,
+                              : AssetImage(
+                              'assets/loading.png') as ImageProvider,
                         ),
                         Positioned(
                           bottom: 0,
@@ -328,7 +341,8 @@ class _ProfilePageState extends State<ProfilePage> {
                             child: CircleAvatar(
                               backgroundColor: Colors.blue,
                               radius: 10,
-                              child: Icon(Icons.edit, size: 14, color: Colors.white),
+                              child: Icon(
+                                  Icons.edit, size: 14, color: Colors.white),
                             ),
                           ),
                         ),
@@ -342,18 +356,21 @@ class _ProfilePageState extends State<ProfilePage> {
                           children: [
                             Text(
                               _userName,
-                              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                  fontSize: 24, fontWeight: FontWeight.bold),
                             ),
                             SizedBox(width: 8),
                             GestureDetector(
                               onTap: _editName,
-                              child: Icon(Icons.edit, size: 20, color: Colors.blue),
+                              child: Icon(
+                                  Icons.edit, size: 20, color: Colors.blue),
                             ),
                           ],
                         ),
                         Text(
                           _userEmail,
-                          style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                          style: TextStyle(fontSize: 18, color: Colors
+                              .grey[600]),
                         ),
                       ],
                     )
@@ -362,9 +379,9 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               SizedBox(height: 10),
               Container(
-                  color: themeProvider.themeMode == ThemeMode.dark
-                      ? Colors.grey[850]
-                      : Colors.white,
+                color: themeProvider.themeMode == ThemeMode.dark
+                    ? Colors.grey[850]
+                    : Colors.white,
                 width: double.infinity, // Full width
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -374,6 +391,12 @@ class _ProfilePageState extends State<ProfilePage> {
                           title: 'Change Password',
                           icon: Icons.lock_reset,
                           onTap: () => _changePassword(context),
+                          showDivider: true
+                      ),
+                      _buildSection(context, title: 'Addition Information',
+                          icon
+                          :Icons.person,
+                          onTap: () => editInfo(context),
                           showDivider: true
                       ),
                       _buildSection(
@@ -406,14 +429,18 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
-  Widget _buildSection(BuildContext context, {required String title, required IconData icon, required VoidCallback onTap, required bool showDivider }) {
+
+  Widget _buildSection(BuildContext context,
+      {required String title, required IconData icon, required VoidCallback onTap, required bool showDivider }) {
     return Column(
       children: [
         GestureDetector(
           onTap: onTap,
           child: Container(
-            color: Colors.transparent, // Transparent to let the parent container's color show through
-            width: double.infinity, // Full width
+            color: Colors.transparent,
+            // Transparent to let the parent container's color show through
+            width: double.infinity,
+            // Full width
             padding: const EdgeInsets.fromLTRB(0, 16, 8, 16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -424,7 +451,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     SizedBox(width: 10),
                     Text(
                       title,
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          fontSize: 22, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -437,7 +465,8 @@ class _ProfilePageState extends State<ProfilePage> {
           SizedBox(height: 5),
           Row(
             children: [
-              SizedBox(width: 40), // Adjust this width to match the icon's width plus margin
+              SizedBox(width: 40),
+              // Adjust this width to match the icon's width plus margin
               Expanded(
                 child: Divider(thickness: 1.0, color: Colors.grey[600]),
               ),
@@ -449,4 +478,131 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  void editInfo(BuildContext context) async {
+    final TextEditingController workController = TextEditingController(text: _work);
+    final TextEditingController addressController = TextEditingController(text: _address);
+    final TextEditingController phoneController = TextEditingController(text: _phone);
+    DateTime? selectedDate = _dob.isNotEmpty && _dob != 'unknown'
+        ? DateFormat('dd/MM/yy').parse(_dob)
+        : null;
+
+    final result = await showDialog<Map<String, String>>(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setDialogState) {
+            return AlertDialog(
+              title: Text('Edit Information'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: workController,
+                      decoration: InputDecoration(
+                        labelText: 'Work',
+                        prefixIcon: Icon(Icons.work),
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    GestureDetector(
+                      onTap: () async {
+                        final DateTime? picked = await showDatePicker(
+                          context: context,
+                          initialDate: selectedDate ?? DateTime.now(),
+                          firstDate: DateTime(1900),
+                          lastDate: DateTime.now(),
+                        );
+                        if (picked != null && picked != selectedDate) {
+                          setDialogState(() {
+                            selectedDate = picked;
+                          });
+                        }
+                      },
+                      child: AbsorbPointer(
+                        child: TextField(
+                          decoration: InputDecoration(
+                            labelText: 'Date of Birth',
+                            prefixIcon: Icon(Icons.calendar_today),
+                            hintText: selectedDate != null
+                                ? DateFormat('dd/MM/yy').format(selectedDate!)
+                                : 'Select date',
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    TextField(
+                      controller: addressController,
+                      decoration: InputDecoration(
+                        labelText: 'Address',
+                        prefixIcon: Icon(Icons.location_on),
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    TextField(
+                      controller: phoneController,
+                      keyboardType: TextInputType.phone,
+                      decoration: InputDecoration(
+                        labelText: 'Phone',
+                        prefixIcon: Icon(Icons.phone),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(null),
+                  child: Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    final newInfo = {
+                      'work': workController.text.trim(),
+                      'dob': selectedDate != null
+                          ? DateFormat('dd/MM/yy').format(selectedDate!)
+                          : _dob,
+                      'address': addressController.text.trim(),
+                      'phone': phoneController.text.trim(),
+                    };
+                    Navigator.of(context).pop(newInfo);
+                  },
+                  child: Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (result != null) {
+      showLoadingDialog(context);
+      try {
+        await _fireStoreService.updateUserInfo(
+          _authService.getCurrentUserId(),
+          result,
+        );
+
+        setState(() {
+          _work = result['work'] ?? _work;
+          _dob = result['dob'] ?? _dob;
+          _address = result['address'] ?? _address;
+          _phone = result['phone'] ?? _phone;
+        });
+
+        Navigator.of(context).pop(); // Dismiss loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Information updated successfully')),
+        );
+      } catch (e) {
+        print(e);
+        Navigator.of(context).pop(); // Dismiss loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error updating information: ${e.toString()}')),
+        );
+      }
+    }
+  }
 }

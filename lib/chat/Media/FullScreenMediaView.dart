@@ -4,6 +4,10 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
+import 'dart:html' as html;
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
+
 
 class MediaItem {
   final String url;
@@ -40,7 +44,6 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
   }
 
   void _initializeVideoControllers() async {
-    // Initialize controllers for current and adjacent pages
     for (int i = -1; i <= 1; i++) {
       int index = _currentIndex + i;
       if (index >= 0 && index < widget.mediaItems.length) {
@@ -72,14 +75,12 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
   }
 
   Future<void> _onPageChanged(int index) async {
-    // Pause all videos when switching pages
     _videoControllers.values.forEach((controller) => controller.pause());
 
     setState(() {
       _currentIndex = index;
     });
 
-    // Initialize controllers for new adjacent pages
     for (int i = -1; i <= 1; i++) {
       int adjacentIndex = index + i;
       if (adjacentIndex >= 0 && adjacentIndex < widget.mediaItems.length) {
@@ -87,41 +88,56 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
       }
     }
 
-    // Clean up controllers that are no longer needed
     _cleanupControllers(index);
 
-    // Play the current video if it's a video
     if (widget.mediaItems[index].isVideo && _videoControllers.containsKey(index)) {
       _videoControllers[index]!.play();
     }
   }
 
+
   Future<void> _downloadMedia(BuildContext context, MediaItem mediaItem) async {
-    if (await Permission.storage.request().isGranted) {
+    if (kIsWeb) {
       try {
-        final response = await http.get(Uri.parse(mediaItem.url));
-        final bytes = response.bodyBytes;
-
-        final directory = await getExternalStorageDirectory();
-        final filePath = '${directory!.path}/${mediaItem.isVideo ? '${mediaItem.fileName}.mp4' : '${mediaItem.fileName}.jpg'}';
-
-        final file = File(filePath);
-        await file.writeAsBytes(bytes);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${mediaItem.isVideo ? 'Video' : 'Image'} downloaded to $filePath')),
-        );
+        final anchor = html.AnchorElement(href: mediaItem.url)
+          ..target = 'blank'
+          ..download = mediaItem.fileName;
+        html.document.body?.append(anchor);
+        anchor.click();
+        anchor.remove();
+        print("File download initiated in web environment");
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to download ${mediaItem.isVideo ? 'video' : 'image'}')),
-        );
+        print("Error handling file download for web: $e");
       }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Storage permission is required')),
-      );
+      if (await Permission.storage.request().isGranted) {
+        try {
+          final response = await http.get(Uri.parse(mediaItem.url));
+          final bytes = response.bodyBytes;
+
+          final directory = await getExternalStorageDirectory();
+          final filePath =
+              '${directory!.path}/${mediaItem.isVideo ? '${mediaItem.fileName}.mp4' : '${mediaItem.fileName}.jpg'}';
+
+          final file = File(filePath);
+          await file.writeAsBytes(bytes);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${mediaItem.isVideo ? 'Video' : 'Image'} downloaded to $filePath')),
+          );
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to download ${mediaItem.isVideo ? 'video' : 'image'}')),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Storage permission is required')),
+        );
+      }
     }
   }
+
 
   @override
   void dispose() {
@@ -140,9 +156,14 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
         alignment: Alignment.center,
         children: [
           Center(
-            child: AspectRatio(
-              aspectRatio: controller.value.aspectRatio,
-              child: VideoPlayer(controller),
+            child: Container(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.8,
+              ),
+              child: AspectRatio(
+                aspectRatio: controller.value.aspectRatio,
+                child: VideoPlayer(controller),
+              ),
             ),
           ),
           Positioned(
@@ -168,30 +189,38 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
         ],
       );
     } else {
-      return Image.network(
-        mediaItem.url,
-        fit: BoxFit.contain,
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return Center(
-            child: CircularProgressIndicator(
-              value: loadingProgress.expectedTotalBytes != null
-                  ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                  : null,
-            ),
-          );
-        },
-        errorBuilder: (context, error, stackTrace) {
-          return Center(
-            child: Text(
-              'Failed to load image',
-              style: TextStyle(color: Colors.red),
-            ),
-          );
-        },
+      return Center(
+        child: Container(
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.8,
+          ),
+          child: Image.network(
+            mediaItem.url,
+            fit: BoxFit.contain,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                      : null,
+                ),
+              );
+            },
+            errorBuilder: (context, error, stackTrace) {
+              return Center(
+                child: Text(
+                  'Failed to load image',
+                  style: TextStyle(color: Colors.red),
+                ),
+              );
+            },
+          ),
+        ),
       );
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -206,14 +235,51 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
           ),
         ],
       ),
-      body: PageView.builder(
-        controller: _pageController,
-        itemCount: widget.mediaItems.length,
-        onPageChanged: _onPageChanged,
-        itemBuilder: (context, index) {
-          return _buildMediaWidget(widget.mediaItems[index], index);
-        },
+      body: Stack(
+        children: [
+          PageView.builder(
+            controller: _pageController,
+            itemCount: widget.mediaItems.length,
+            onPageChanged: _onPageChanged,
+            itemBuilder: (context, index) {
+              return _buildMediaWidget(widget.mediaItems[index], index);
+            },
+          ),
+          if (kIsWeb)
+            Positioned(
+              left: 10,
+              top: MediaQuery.of(context).size.height / 2 - 30,
+              child: IconButton(
+                icon: Icon(Icons.arrow_back_ios, color: Colors.white),
+                onPressed: () {
+                  if (_currentIndex > 0) {
+                    _pageController.previousPage(
+                      duration: Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  }
+                },
+              ),
+            ),
+          if (kIsWeb)
+            Positioned(
+              right: 10,
+              top: MediaQuery.of(context).size.height / 2 - 30,
+              child: IconButton(
+                icon: Icon(Icons.arrow_forward_ios, color: Colors.white),
+                onPressed: () {
+                  if (_currentIndex < widget.mediaItems.length - 1) {
+                    _pageController.nextPage(
+                      duration: Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  }
+                },
+              ),
+            ),
+        ],
       ),
     );
   }
+
 }

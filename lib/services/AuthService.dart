@@ -7,7 +7,7 @@ class AuthService {
   final fireStore = FirebaseFirestore.instance;
 
   Future<User?> createUserWithEmailAndPasswordVerify(
-      String email, String password, String name) async {
+      String email, String password, String name, String work, String dob, String address, String phone) async {
     try {
       final cred = await auth.createUserWithEmailAndPassword(
           email: email, password: password);
@@ -18,7 +18,11 @@ class AuthService {
         'id': cred.user!.uid,
         'email': cred.user!.email,
         'name': name,
-        'avatar':'https://firebasestorage.googleapis.com/v0/b/flutter-final-app-bcd9d.appspot.com/o/default_avatar.jpg?alt=media&token=974ef2cd-c48c-4a15-979e-8350a0c37168'
+        'work': work,
+        'dob': dob,
+        'address': address,
+        'phone': phone,
+        'avatar': 'https://firebasestorage.googleapis.com/v0/b/flutter-final-app-bcd9d.appspot.com/o/default_avatar.jpg?alt=media&token=974ef2cd-c48c-4a15-979e-8350a0c37168'
       });
 
       return cred.user;
@@ -29,7 +33,7 @@ class AuthService {
   }
 
   Future<User?> createUserWithEmailAndPassword(
-      String email, String password, String name) async {
+      String email, String password, String name, String work, String dob, String address, String phone) async {
     try {
       final cred = await auth.createUserWithEmailAndPassword(
           email: email, password: password);
@@ -38,7 +42,11 @@ class AuthService {
         'id': cred.user!.uid,
         'email': cred.user!.email,
         'name': name,
-        'avatar':'https://firebasestorage.googleapis.com/v0/b/flutter-final-app-bcd9d.appspot.com/o/default_avatar.jpg?alt=media&token=974ef2cd-c48c-4a15-979e-8350a0c37168'
+        'work': work,
+        'dob': dob,
+        'address': address,
+        'phone': phone,
+        'avatar': 'https://firebasestorage.googleapis.com/v0/b/flutter-final-app-bcd9d.appspot.com/o/default_avatar.jpg?alt=media&token=974ef2cd-c48c-4a15-979e-8350a0c37168'
       });
 
       return cred.user;
@@ -47,6 +55,7 @@ class AuthService {
       return null;
     }
   }
+
 
   Future<User?> loginUserWithEmailAndPassword(
       String email, String password) async {

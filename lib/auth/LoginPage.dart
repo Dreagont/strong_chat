@@ -140,8 +140,8 @@ class _LoginPageState extends State<LoginPage> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton(
-                  onPressed: () => _quickLogin('hehe@gmail.com', '123456'),
-                  child: Text('Quick Login hehe'),
+                  onPressed: () => _quickLogin('huong@gmail.com', '123456'),
+                  child: Text('Quick Login huong'),
                 ),
                 ElevatedButton(
                   onPressed: () => _quickLogin('huynhannguyen222@gmail.com', '123456'),

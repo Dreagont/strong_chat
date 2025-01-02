@@ -5,7 +5,6 @@ import 'package:strong_chat/services/FireStoreService.dart';
 import 'PagesUtils/MessagesPageHelper.dart';
 import 'ChangeTheme.dart';
 
-
 class MessagesPage extends StatefulWidget {
   @override
   _MessagesPageState createState() => _MessagesPageState();
@@ -16,6 +15,7 @@ class _MessagesPageState extends State<MessagesPage> {
   final AuthService authService = AuthService();
   List<Map<String, dynamic>> friends = [];
   Stream<List<Map<String, dynamic>>>? chatStream;
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -24,6 +24,10 @@ class _MessagesPageState extends State<MessagesPage> {
   }
 
   void fetchChats() {
+    setState(() {
+      _isLoading = true;
+    });
+
     chatStream = fireStoreService.getChatsStream(authService.getCurrentUserId());
     chatStream?.listen((newFriends) {
       if (!mounted) return;
@@ -32,9 +36,13 @@ class _MessagesPageState extends State<MessagesPage> {
             .where((friend) => friend['isHide'] != true)
             .toList()
           ..sort((a, b) => (b['lastMessTime'] ?? 0).compareTo(a['lastMessTime'] ?? 0));
+        _isLoading = false;
       });
     }, onError: (error) {
       print("Error fetching chats: $error");
+      setState(() {
+        _isLoading = false;
+      });
     });
   }
 
@@ -51,9 +59,44 @@ class _MessagesPageState extends State<MessagesPage> {
   }
 
   Widget userList(ThemeProvider theme) {
-    if (friends.isEmpty) {
-      return const Center(child: Text("Loading......"));
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
     }
+
+    if (friends.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text("No Chat Found"),
+            const SizedBox(height: 30),
+            Text(
+              'Easy to find and chat with your friends',
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+            const SizedBox(height: 15),
+            ElevatedButton(
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all<Color>(Colors.blueAccent),
+              ),
+              onPressed: () {
+              },
+              child: const Text(
+                'Add more friend',
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.normal,
+                    color: Colors.white
+                ),
+              ),
+            )
+          ],
+        ),
+      );
+    }
+
     return ListView.builder(
       itemCount: friends.length + 1,
       itemBuilder: (context, index) {
@@ -67,17 +110,21 @@ class _MessagesPageState extends State<MessagesPage> {
                     'Easy to find and chat with your friends',
                     style: TextStyle(fontSize: 14, color: Colors.grey),
                   ),
-                  SizedBox(height: 15),
+                  const SizedBox(height: 15),
                   ElevatedButton(
                     style: ButtonStyle(
                       backgroundColor: MaterialStateProperty.all<Color>(Colors.blueAccent),
                     ),
                     onPressed: () {
-
+                      // Add friend logic here
                     },
-                    child: Text(
+                    child: const Text(
                       'Add more friend',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal, color: Colors.white),
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.normal,
+                          color: Colors.white
+                      ),
                     ),
                   )
                 ],
@@ -97,9 +144,6 @@ class _MessagesPageState extends State<MessagesPage> {
     return StreamBuilder<String?>(
       stream: fireStoreService.getNicknameStream(currentUserId, friendData["id"]),
       builder: (context, nicknameSnapshot) {
-        if (nicknameSnapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        }
         if (nicknameSnapshot.hasError) {
           return Text('Error: ${nicknameSnapshot.error}');
         }

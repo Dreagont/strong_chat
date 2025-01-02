@@ -55,14 +55,16 @@ class MessageSenderService {
     if (pickedImage != null) {
       final Timestamp timestamp = Timestamp.now();
       String chatBoxId = _getChatBoxId();
-      String filePath = 'ChatData/$chatBoxId/$timestamp.jpg';
+      String fileName = pickedImage.name.split('.').first;
+      String fullFileName = '$fileName.jpg';
+      String filePath = 'ChatData/$chatBoxId/$timestamp/$fileName.jpg';
 
       Map<String, dynamic> holderMessage = {
         'message': pickedImage.path,
         'messType': 'holder',
         'timeStamp': timestamp,
         'senderId': authService.getCurrentUserId(),
-        'fileName': pickedImage.name
+        'fileName': fullFileName
       };
 
       onMessageAdded(holderMessage);
@@ -71,7 +73,8 @@ class MessageSenderService {
         await storageService.uploadImage(
             pickedImage,
             timestamp.toString(),
-            'ChatData/$chatBoxId'
+            'ChatData/$chatBoxId',
+            fullFileName
         );
 
         String downloadUrl = await FirebaseStorage.instance.ref(filePath).getDownloadURL();
@@ -90,13 +93,15 @@ class MessageSenderService {
     if (pickedVideo != null) {
       final Timestamp timestamp = Timestamp.now();
       String chatBoxId = _getChatBoxId();
+      String fileName = pickedVideo.name.split('.').first;
+      String fullFileName = '$fileName.mp4';
 
       Map<String, dynamic> tempMessage = {
         'message': pickedVideo.path,
         'messType': 'VHolder',
         'timeStamp': timestamp,
         'senderId': authService.getCurrentUserId(),
-        'fileName': pickedVideo.name
+        'fileName': fullFileName
       };
 
       onMessageAdded(tempMessage);
@@ -104,13 +109,15 @@ class MessageSenderService {
           timestamp.toString(),
           'ChatData/$chatBoxId',
           chatBoxId,
-          friendId
+          friendId,
+          fullFileName
       );
-      String filePath = 'ChatData/$chatBoxId/$timestamp.mp4';
+
+      String filePath = 'ChatData/$chatBoxId/$timestamp/$fullFileName';
 
       String downloadUrl = await FirebaseStorage.instance.ref(filePath).getDownloadURL();
 
-      await chatService.sendMessage(friendId, downloadUrl, 'video', pickedVideo.name);
+      await chatService.sendMessage(friendId, downloadUrl, 'video', fullFileName);
       onMessageSent();
     }
   }
