@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:strong_chat/services/AuthService.dart';
+import 'package:strong_chat/services/FireStoreService.dart';
 import 'package:strong_chat/services/FriendService.dart';
 
 import '../pages/ChangeTheme.dart';
+import '../pages/PagesUtils/ChatManager.dart';
+import '../pages/PagesUtils/MessagesPageHelper.dart';
 import '../pages/contacts/UserProfilePage.dart';
 
 class ChatMore extends StatefulWidget {
   final Map<String, dynamic> friendData;
   final List<Map<String, dynamic>> allMessages;
-  final String nickname;
 
   const ChatMore({
     Key? key,
     required this.friendData,
     required this.allMessages,
-    required this.nickname,
   }) : super(key: key);
 
   @override
@@ -53,7 +54,9 @@ class _ChatMoreState extends State<ChatMore> {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
-
+    final userId = AuthService().getCurrentUserId();
+    final friendId = widget.friendData['id'];
+    Stream<bool> blockedStream = FireStoreService().isBlockedHimStream(userId, friendId);
 
     return Scaffold(
       appBar: AppBar(
@@ -76,15 +79,24 @@ class _ChatMoreState extends State<ChatMore> {
               ),
               SizedBox(height: 10),
               Center(
-                child: Text(
-                  widget.nickname,
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: themeProvider.themeMode == ThemeMode.dark
-                        ? Colors.white
-                        : Colors.black,
-                  ),
+                child: StreamBuilder<String?>(
+                  stream: FireStoreService().getNicknameStream(userId, friendId),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return CircularProgressIndicator();
+                    }
+                    final nickname = snapshot.data ?? "No Nickname";
+                    return Text(
+                      nickname,
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: themeProvider.themeMode == ThemeMode.dark
+                            ? Colors.white
+                            : Colors.black,
+                      ),
+                    );
+                  },
                 ),
               ),
               SizedBox(height: 30),
@@ -131,7 +143,13 @@ class _ChatMoreState extends State<ChatMore> {
                     context: context,
                     title: 'Change Nickname',
                     icon: Icons.edit,
-                    onTap: () {},
+                    onTap: () {
+                      ChatManager(
+                          authService: AuthService(),
+                          fireStoreService: FireStoreService())
+                          .showChangeNicknameDialog(
+                          context, widget.friendData);
+                    },
                     showDivider: true,
                   ),
                   _buildSection(
@@ -145,15 +163,35 @@ class _ChatMoreState extends State<ChatMore> {
                     context: context,
                     title: 'Delete Chat',
                     icon: Icons.delete,
-                    onTap: () {},
+                    onTap: () {
+                      ChatManager(
+                          authService: AuthService(),
+                          fireStoreService: FireStoreService())
+                          .hideChat(context, friendId);
+                    },
                     showDivider: true,
                   ),
-                  _buildSection(
-                    context: context,
-                    title: 'Block User',
-                    icon: Icons.block,
-                    onTap: () {},
-                    showDivider: false, // Last item does not need a divider
+                  StreamBuilder<bool>(
+                    stream: blockedStream,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return CircularProgressIndicator();
+                      }
+                      final isBlocked = snapshot.data ?? false;
+                      final text = isBlocked ? "Unblock User" : "Block User";
+                      return _buildSection(
+                        context: context,
+                        title: text,
+                        icon: Icons.block,
+                        onTap: () {
+                          ChatManager(
+                              authService: AuthService(),
+                              fireStoreService: FireStoreService())
+                              .toggleBlockUser(context, friendId);
+                        },
+                        showDivider: false,
+                      );
+                    },
                   ),
                 ],
               )
@@ -176,8 +214,8 @@ class _ChatMoreState extends State<ChatMore> {
         GestureDetector(
           onTap: onTap,
           child: Container(
-            color: Colors.transparent, // Transparent to let the parent container's color show through
-            width: double.infinity, // Full width
+            color: Colors.transparent,
+            width: double.infinity,
             padding: const EdgeInsets.fromLTRB(0, 16, 8, 16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -201,7 +239,7 @@ class _ChatMoreState extends State<ChatMore> {
           SizedBox(height: 5),
           Row(
             children: [
-              SizedBox(width: 40), // Adjust this width to match the icon's width plus margin
+              SizedBox(width: 40),
               Expanded(
                 child: Divider(thickness: 1.0, color: Colors.grey[600]),
               ),
@@ -212,6 +250,4 @@ class _ChatMoreState extends State<ChatMore> {
       ],
     );
   }
-
-
 }

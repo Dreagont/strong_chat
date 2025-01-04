@@ -34,8 +34,10 @@ class _ScanQRCodePageState extends State<ScanQRCodePage> {
     return 'add';
   }
 
-  void _showProfileConfirmationDialog(BuildContext context, String friendId, Uint8List? image) async {
-    DocumentSnapshot friendSnapshot = await FirebaseFirestore.instance.collection('Users').doc(friendId).get();
+  void _showProfileConfirmationDialog(
+      BuildContext context, String friendId, Uint8List? image) async {
+    DocumentSnapshot friendSnapshot =
+    await FirebaseFirestore.instance.collection('Users').doc(friendId).get();
     Map<String, dynamic>? friendData = friendSnapshot.data() as Map<String, dynamic>?;
     String status = await checkFriendStatus(friendId);
 
@@ -116,33 +118,55 @@ class _ScanQRCodePageState extends State<ScanQRCodePage> {
   @override
   Widget build(BuildContext context) {
     bool isWeb = identical(0, 0.0);
+    double screenWidth = MediaQuery.of(context).size.width;
+    double screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Scan QR Code'),
       ),
-      body: isWeb
-          ? Center(
-        child: ElevatedButton(
-          onPressed: _pickFile,
-          child: Text('Pick QR Code from File'),
-        ),
-      )
-          : MobileScanner(
-        controller: _controller,
-        onDetect: (capture) {
-          List<Barcode> barcodes = capture.barcodes;
-          Uint8List? image = capture.image;
-          for (Barcode barcode in barcodes) {
-            String barcodeData = barcode.rawValue ?? '';
-            if (barcodeData.startsWith('http://')) {
-              barcodeData = barcodeData.substring(7);
-            }
-            print('Barcode: $barcodeData');
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (!isWeb)
+              Container(
+                width: screenWidth * 0.7,
+                height: screenHeight * 0.3,
+                child: MobileScanner(
+                  controller: _controller,
+                  onDetect: (capture) {
+                    List<Barcode> barcodes = capture.barcodes;
+                    Uint8List? image = capture.image;
+                    for (Barcode barcode in barcodes) {
+                      String barcodeData = barcode.rawValue ?? '';
+                      if (barcodeData.startsWith('http://')) {
+                        barcodeData = barcodeData.substring(7);
+                      }
+                      print('Barcode: $barcodeData');
 
-            _controller.stop();
-            _showProfileConfirmationDialog(context, barcodeData, image);
-          }
-        },
+                      _controller.stop();
+                      _showProfileConfirmationDialog(context, barcodeData, image);
+                    }
+                  },
+                ),
+              ),
+            if (!isWeb)
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0),
+                child: ElevatedButton.icon(
+                  onPressed: _pickFile,
+                  icon: Icon(Icons.upload_file),
+                  label: Text('Pick QR Code from File'),
+                ),
+              ),
+            if (isWeb)
+              ElevatedButton(
+                onPressed: _pickFile,
+                child: Text('Pick QR Code from File'),
+              ),
+          ],
+        ),
       ),
     );
   }

@@ -142,7 +142,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
                                   MaterialPageRoute(
                                     builder: (context) => ChatPage(
                                       friendData: widget.userData,
-                                      nickname: nickname,
                                     ),
                                   ),
                                 );
@@ -153,7 +152,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
                                   MaterialPageRoute(
                                     builder: (context) => ChatPage(
                                       friendData: widget.userData,
-                                      nickname: widget.userData['name'],
                                     ),
                                   ),
                                 );

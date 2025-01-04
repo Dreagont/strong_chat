@@ -76,9 +76,12 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
         ? Stack(
       alignment: Alignment.center,
       children: [
-        AspectRatio(
-          aspectRatio: _controller.value.aspectRatio,
-          child: VideoPlayer(_controller),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: AspectRatio(
+            aspectRatio: _controller.value.aspectRatio,
+            child: VideoPlayer(_controller),
+          ),
         ),
         Positioned(
           bottom: 10,
@@ -109,7 +112,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
           child: GestureDetector(
             onTap: _toggleFullscreen,
             child: Icon(
-              isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
+              Icons.fullscreen,
               size: 40,
               color: Colors.white,
             ),

@@ -4,9 +4,10 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
-import 'dart:html' as html;
+import 'package:universal_html/html.dart' as html;
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
+import 'package:gallery_saver_plus/gallery_saver.dart';
 
 
 class MediaItem {
@@ -95,7 +96,6 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
     }
   }
 
-
   Future<void> _downloadMedia(BuildContext context, MediaItem mediaItem) async {
     if (kIsWeb) {
       try {
@@ -116,16 +116,31 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
           final bytes = response.bodyBytes;
 
           final directory = await getExternalStorageDirectory();
-          final filePath =
-              '${directory!.path}/${mediaItem.isVideo ? '${mediaItem.fileName}.mp4' : '${mediaItem.fileName}.jpg'}';
+          final downloadDir = Directory('${directory!.path}/StrongChat');
+          if (!await downloadDir.exists()) {
+            await downloadDir.create(recursive: true);
+          }
+
+          final timestamp = DateTime.now().millisecondsSinceEpoch;
+          final extension = mediaItem.isVideo ? 'mp4' : 'jpg';
+          final filename = '${mediaItem.fileName}_$timestamp.$extension';
+          final filePath = '${downloadDir.path}/$filename';
 
           final file = File(filePath);
           await file.writeAsBytes(bytes);
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${mediaItem.isVideo ? 'Video' : 'Image'} downloaded to $filePath')),
-          );
+          final result = await GallerySaver.saveImage(filePath);
+          if (result != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('${mediaItem.isVideo ? 'Video' : 'Image'} saved to gallery')),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to save ${mediaItem.isVideo ? 'video' : 'image'}')),
+            );
+          }
         } catch (e) {
+          print("Download error: $e");
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Failed to download ${mediaItem.isVideo ? 'video' : 'image'}')),
           );

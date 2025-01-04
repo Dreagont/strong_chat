@@ -116,11 +116,4 @@ class UserInput extends StatelessWidget {
       },
     );
   }
-
-
-  String _getChatBoxId() {
-    List<String> ids = [authService.getCurrentUserId(), friendId];
-    ids.sort();
-    return ids.join('_');
-  }
 }

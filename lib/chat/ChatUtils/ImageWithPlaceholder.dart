@@ -6,7 +6,11 @@ class ImageWithPlaceholder extends StatefulWidget {
   final String imageUrl;
   final List<MediaItem> mediaUrls;
 
-  const ImageWithPlaceholder({Key? key, required this.imageUrl, required this.mediaUrls}) : super(key: key);
+  const ImageWithPlaceholder({
+    Key? key,
+    required this.imageUrl,
+    required this.mediaUrls
+  }) : super(key: key);
 
   @override
   _ImageWithPlaceholderState createState() => _ImageWithPlaceholderState();
@@ -79,46 +83,53 @@ class _ImageWithPlaceholderState extends State<ImageWithPlaceholder> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () => _openFullScreen(context, widget.mediaUrls, widget.imageUrl),
-      child: _isLoaded
-          ? Column(
-        children: [
-          Text(
-            '${_width?.toInt()}x${_height?.toInt()}',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
-          ),
-          Image.network(
-            widget.imageUrl,
-            fit: BoxFit.cover,
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return Center(
-                child: CircularProgressIndicator(
-                  value: loadingProgress.expectedTotalBytes != null
-                      ? loadingProgress.cumulativeBytesLoaded /
-                      loadingProgress.expectedTotalBytes!
-                      : null,
-                ),
-              );
-            },
-          ),
-        ],
-      )
-          : _isError
-          ? Center(
-        child: Text(
-          "Failed to load image, retrying...",
-          style: TextStyle(color: Colors.red),
-        ),
-      )
-          : SizedBox(
-        width: _width ?? 100.0,
-        height: _height ?? 100.0,
-        child: Center(child: CircularProgressIndicator()),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          if (_isLoaded) {
+            double aspectRatio = _width! / _height!;
+            double targetHeight = constraints.maxWidth / aspectRatio;
+
+            // Ensure the height doesn't exceed constraints
+            targetHeight = targetHeight.clamp(0.0, constraints.maxHeight);
+
+            return SizedBox(
+              width: constraints.maxWidth,
+              height: targetHeight,
+              child: Image.network(
+                widget.imageUrl,
+                fit: BoxFit.cover,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Center(
+                    child: CircularProgressIndicator(
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                          loadingProgress.expectedTotalBytes!
+                          : null,
+                    ),
+                  );
+                },
+              ),
+            );
+          } else if (_isError) {
+            return Center(
+              child: Text(
+                "Failed to load image, retrying...",
+                style: TextStyle(color: Colors.red),
+              ),
+            );
+          } else {
+            return SizedBox(
+              width: constraints.maxWidth,
+              height: constraints.maxHeight,
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+        },
       ),
     );
   }
