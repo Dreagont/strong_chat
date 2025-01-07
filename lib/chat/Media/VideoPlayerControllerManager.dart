@@ -1,18 +1,24 @@
 import 'package:video_player/video_player.dart';
 
 class VideoPlayerControllerManager {
-  static VideoPlayerController? _activeController;
+  static final List<VideoPlayerController> _controllers = [];
 
-  static void setActiveController(VideoPlayerController controller) {
-    if (_activeController != null && _activeController != controller) {
-      _activeController!.pause();
+  static void registerController(VideoPlayerController controller) {
+    if (!_controllers.contains(controller)) {
+      _controllers.add(controller);
     }
-    _activeController = controller;
   }
 
   static void disposeController(VideoPlayerController controller) {
-    if (_activeController == controller) {
-      _activeController = null;
+    _controllers.remove(controller);
+    controller.dispose();
+  }
+
+  static void setActiveController(VideoPlayerController activeController) {
+    for (var controller in _controllers) {
+      if (controller != activeController && controller.value.isPlaying) {
+        controller.pause();
+      }
     }
   }
 }

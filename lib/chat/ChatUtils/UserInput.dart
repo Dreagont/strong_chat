@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:provider/provider.dart';
-import 'package:strong_chat/pages/ChangeTheme.dart';
-
 import '../../UI_Widgets/InputBox.dart';
 import '../../services/AuthService.dart';
 import '../../services/FireStoreService.dart';
 import '../../services/StorageService.dart';
+import 'package:strong_chat/pages/ChangeTheme.dart';
 
 class UserInput extends StatelessWidget {
   final TextEditingController messController;
@@ -37,10 +34,10 @@ class UserInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
-    final color = themeProvider.themeMode == ThemeMode.dark? Colors.white : Colors.grey;
+    final color = themeProvider.themeMode == ThemeMode.dark ? Colors.white : Colors.grey;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(0,0,0,0),
+      padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
       child: Container(
         color: themeProvider.themeMode == ThemeMode.dark ? Colors.grey[900] : Colors.white,
         child: Row(
@@ -51,15 +48,23 @@ class UserInput extends StatelessWidget {
               onPressed: () => showMediaOptions(context),
             ),
             Expanded(
-              child: InputBox(
-                hint: "Type your message",
+              child: TextField(
                 controller: messController,
                 focusNode: focusNode,
+                textInputAction: TextInputAction.send,
+                onSubmitted: (value) {
+                  sendTextMessage();
+                },
+                decoration: InputDecoration(
+                  hintText: "Type your message",
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 10),
+                ),
               ),
             ),
             IconButton(
               color: color,
-              onPressed: () => sendTextMessage(),
+              onPressed: sendTextMessage,
               icon: Icon(Icons.send),
             ),
           ],
@@ -80,19 +85,19 @@ class UserInput extends StatelessWidget {
                 context,
                 Icons.image,
                 'Image',
-                    () => sendImageMessage(),
+                sendImageMessage,
               ),
               _buildMediaOption(
                 context,
                 Icons.video_library,
                 'Video',
-                    () => sendVideoMessage(),
+                sendVideoMessage,
               ),
               _buildMediaOption(
                 context,
                 Icons.insert_drive_file,
                 'File',
-                    () => sendFileMessage(),
+                sendFileMessage,
               ),
             ],
           ),

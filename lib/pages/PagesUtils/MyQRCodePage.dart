@@ -24,30 +24,52 @@ class MyQRCodePage extends StatelessWidget {
 
   final GlobalKey _globalKey = GlobalKey();
 
-
   Future<void> _saveQrCodeToGallery(BuildContext context, GlobalKey globalKey) async {
     try {
-      // Capture the QR code widget as an image
       final boundary = globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-      final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
-      final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      final Uint8List pngBytes = byteData!.buffer.asUint8List();
 
-      if (foundation.kIsWeb) {
-        // For web: Trigger download via the browser
-        final blob = html.Blob([pngBytes]);
-        final url = html.Url.createObjectUrlFromBlob(blob);
-        final anchor = html.AnchorElement(href: url)
-          ..target = 'blank'
-          ..download = 'qrcode_${AuthService().getCurrentUserId()}.png';
-        html.document.body?.append(anchor);
-        anchor.click();
-        anchor.remove();
-        html.Url.revokeObjectUrl(url);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('QR Code saved to gallery')),
+      if (kIsWeb) {
+        final qrValidationResult = QrValidator.validate(
+          data: userId,
+          version: QrVersions.auto,
+          errorCorrectionLevel: QrErrorCorrectLevel.L,
         );
+
+        if (qrValidationResult.status == QrValidationStatus.valid) {
+          final qrCode = qrValidationResult.qrCode!;
+          final painter = QrPainter.withQr(
+            qr: qrCode,
+            color: const Color(0xFF000000),
+            emptyColor: const Color(0xFFFFFFFF),
+            gapless: true,
+          );
+
+          final image = await painter.toImageData(200.0);
+          if (image != null) {
+            final bytes = image.buffer.asUint8List();
+            final blob = html.Blob([bytes], 'image/png');
+            final url = html.Url.createObjectUrlFromBlob(blob);
+
+            final downloadElement = html.AnchorElement()
+              ..href = url
+              ..download = 'qrcode_${AuthService().getCurrentUserId()}.png'
+              ..style.display = 'none';
+
+            html.document.body!.children.add(downloadElement);
+            downloadElement.click();
+            html.document.body!.children.remove(downloadElement);
+            html.Url.revokeObjectUrl(url);
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('QR Code downloaded successfully')),
+            );
+          }
+        }
       } else {
+        final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+        final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+        final Uint8List pngBytes = byteData!.buffer.asUint8List();
+
         if (await Permission.storage.request().isGranted) {
           final directory = Directory('/storage/emulated/0/Pictures/StrongChat');
           if (!await directory.exists()) {
@@ -60,11 +82,11 @@ class MyQRCodePage extends StatelessWidget {
           final result = await GallerySaver.saveImage(filePath);
           if (result != null) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('QR Code saved to gallery')),
+              const SnackBar(content: Text('QR Code saved to gallery')),
             );
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Failed to save QR Code saved to gallery')),
+              const SnackBar(content: Text('Failed to save QR Code to gallery')),
             );
           }
         } else {
@@ -73,18 +95,20 @@ class MyQRCodePage extends StatelessWidget {
       }
     } catch (e) {
       print("Error saving QR Code: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving QR Code: $e')),
+      );
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('My QR Code'),
+        title: const Text('My QR Code'),
         actions: [
           IconButton(
-            icon: Icon(Icons.save),
+            icon: const Icon(Icons.save),
             onPressed: () => _saveQrCodeToGallery(context, _globalKey),
           ),
         ],
@@ -96,14 +120,14 @@ class MyQRCodePage extends StatelessWidget {
             CircleAvatar(
               radius: 50,
               backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl!) : null,
-              child: avatarUrl == null ? Icon(Icons.person, size: 50) : null,
+              child: avatarUrl == null ? const Icon(Icons.person, size: 50) : null,
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             Text(
               userName,
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             RepaintBoundary(
               key: _globalKey,
               child: QrImageView(
@@ -113,10 +137,10 @@ class MyQRCodePage extends StatelessWidget {
                 size: 200.0,
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             ElevatedButton(
-              onPressed:() => _saveQrCodeToGallery(context, _globalKey),
-              child: Text("Save to Gallery"),
+              onPressed: () => _saveQrCodeToGallery(context, _globalKey),
+              child: const Text("Save to Gallery"),
             ),
           ],
         ),

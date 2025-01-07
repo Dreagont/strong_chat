@@ -107,27 +107,7 @@ class _MessagesPageState extends State<MessagesPage> {
             child: Center(
               child: Column(
                 children: [
-                  Text(
-                    'Easy to find and chat with your friends',
-                    style: TextStyle(fontSize: 14, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 15),
-                  ElevatedButton(
-                    style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all<Color>(Colors.blueAccent),
-                    ),
-                    onPressed: () {
-                      // Add friend logic here
-                    },
-                    child: const Text(
-                      'Add more friend',
-                      style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.normal,
-                          color: Colors.white
-                      ),
-                    ),
-                  )
+
                 ],
               ),
             ),

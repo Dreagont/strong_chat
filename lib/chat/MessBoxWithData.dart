@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,8 +14,7 @@ import '../pages/ChangeTheme.dart';
 import 'ChatUtils/ImageWithPlaceholder.dart';
 import 'Media/VideoPlayerWidget.dart';
 import 'package:http/http.dart' as http;
-
-class MessageBoxWithData extends StatelessWidget {
+class MessageBoxWithData extends StatefulWidget {
   final Map<String, dynamic> data;
   final bool showTimestamp;
   final String Function(Timestamp) formatTimestamp;
@@ -35,6 +36,30 @@ class MessageBoxWithData extends StatelessWidget {
     required this.friendData,
   }) : super(key: key);
 
+  @override
+  State<MessageBoxWithData> createState() => _MessageBoxWithDataState();
+}
+
+class _MessageBoxWithDataState extends State<MessageBoxWithData> {
+  bool isHovered = false;
+
+  Timer? _hoverTimer;
+
+  @override
+  void dispose() {
+    _hoverTimer?.cancel();
+    super.dispose();
+  }
+
+  void _handleHoverExit() {
+    _hoverTimer?.cancel();
+    _hoverTimer = Timer(Duration(milliseconds: 200), () {
+      if (mounted) {
+        setState(() => isHovered = false);
+      }
+    });
+  }
+
   double _getMaxWidth(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     bool isPhone = screenWidth < 600;
@@ -43,25 +68,25 @@ class MessageBoxWithData extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    bool isMyMess = data['senderId'] == authService.getCurrentUserId();
-    String currentUserId = authService.getCurrentUserId();
+    bool isWeb = identical(0, 0.0);
+    bool isMyMess = widget.data['senderId'] == widget.authService.getCurrentUserId();
+    String currentUserId = widget.authService.getCurrentUserId();
     var alignment = isMyMess ? Alignment.centerRight : Alignment.centerLeft;
     var messageColor = isMyMess
-        ? (themeProvider.themeMode == ThemeMode.dark
+        ? (widget.themeProvider.themeMode == ThemeMode.dark
         ? Colors.cyan[700]
         : Colors.lightBlue)
-        : (themeProvider.themeMode == ThemeMode.dark
+        : (widget.themeProvider.themeMode == ThemeMode.dark
         ? Colors.grey[900]
         : Colors.white);
 
-    List<String> deletedBy = List<String>.from(data['deletedBy'] ?? []);
+    List<String> deletedBy = List<String>.from(widget.data['deletedBy'] ?? []);
     if (deletedBy.contains(currentUserId)) {
       return SizedBox.shrink();
     }
 
-    List<String> likes = List<String>.from(data['likes'] ?? []);
+    List<String> likes = List<String>.from(widget.data['likes'] ?? []);
     bool hasLikes = likes.isNotEmpty;
-    bool isLikedByCurrentUser = likes.contains(currentUserId);
 
     return Align(
       alignment: alignment,
@@ -69,12 +94,12 @@ class MessageBoxWithData extends StatelessWidget {
         crossAxisAlignment:
         isMyMess ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
-          if (showTimestamp)
+          if (widget.showTimestamp)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 5.0),
               child: Center(
                 child: Text(
-                  formatTimestamp(data["timeStamp"]),
+                  widget.formatTimestamp(widget.data["timeStamp"]),
                   style: TextStyle(
                     color: Colors.grey,
                     fontSize: 14,
@@ -83,82 +108,118 @@ class MessageBoxWithData extends StatelessWidget {
                 ),
               ),
             ),
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              GestureDetector(
-                onLongPress: () => showOptionsMenu(context),
-                child: Container(
-                  decoration: (data["messType"] == "image" ||
-                      data["messType"] == "video" ||
-                      data["messType"] == "holder")
-                      ? null
-                      : BoxDecoration(
-                    color: messageColor,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: (data["messType"] == "image" ||
-                      data["messType"] == "video" ||
-                      data["messType"] == "holder")
-                      ? null
-                      : EdgeInsets.all(16),
-                  margin: EdgeInsets.symmetric(vertical: 5, horizontal: 25),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: _getMaxWidth(context),
-                      maxHeight: data["messType"] == "image" || data["messType"] == "video"
-                          ? _getMaxWidth(context) * (3/4)
-                          : double.infinity,
+          MouseRegion(
+            onEnter: isWeb ? (_) => setState(() => isHovered = true) : null,
+            onExit: isWeb ? (_) => _handleHoverExit() : null,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                // Message content
+                GestureDetector(
+                  onLongPress: !isWeb ? () => showOptionsMenu(context) : null,
+                  child: Container(
+                    decoration: (widget.data["messType"] == "image" ||
+                        widget.data["messType"] == "video" ||
+                        widget.data["messType"] == "holder")
+                        ? null
+                        : BoxDecoration(
+                      color: messageColor,
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: _buildMessageContent(context),
+                    padding: (widget.data["messType"] == "image" ||
+                        widget.data["messType"] == "video" ||
+                        widget.data["messType"] == "holder")
+                        ? null
+                        : EdgeInsets.all(16),
+                    margin: EdgeInsets.symmetric(vertical: 5, horizontal: 25),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: _getMaxWidth(context),
+                        maxHeight: widget.data["messType"] == "image" || widget.data["messType"] == "video"
+                            ? _getMaxWidth(context) * (3/4)
+                            : double.infinity,
+                      ),
+                      child: _buildMessageContent(context),
+                    ),
                   ),
                 ),
-              ),
-              if (hasLikes)
-                Positioned(
-                  bottom: -10,
-                  left: isMyMess ? 10 : null,
-                  right: isMyMess ? null : 10,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Container(
-                        width: 28,
-                        height: 28,
+                if (isWeb && isHovered)
+                  Positioned(
+                    top: 0,
+                    bottom: 0,
+                    left: isMyMess ? -20 : null,
+                    right: isMyMess ? null : -20,
+                    child: Center(
+                      child: Container(
+                        width: 35,
+                        height: 35,
                         decoration: BoxDecoration(
-                          color: Colors.blueGrey,
-                          borderRadius: BorderRadius.circular(14),
+                          color: widget.themeProvider.themeMode == ThemeMode.dark
+                              ? Colors.grey[800]
+                              : Colors.grey[200],
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: IconButton(
+                          iconSize: 20,
+                          padding: EdgeInsets.zero,
+                          icon: Icon(
+                            Icons.more_vert,
+                            color: widget.themeProvider.themeMode == ThemeMode.dark
+                                ? Colors.white
+                                : Colors.black54,
+                          ),
+                          onPressed: () => showOptionsMenu(context),
                         ),
                       ),
-                      Icon(
-                        Icons.favorite,
-                        color: Colors.red,
-                        size: 20,
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-            ],
+                // Likes indicator
+                if (hasLikes)
+                  Positioned(
+                    bottom: -10,
+                    left: isMyMess ? 10 : null,
+                    right: isMyMess ? null : 10,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: Colors.blueGrey,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        Icon(
+                          Icons.favorite,
+                          color: Colors.red,
+                          size: 20,
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
-
+  
   Widget _buildMessageContent(BuildContext context) {
-    switch (data["messType"]) {
+    switch (widget.data["messType"]) {
       case "image":
         return ClipRRect(
           borderRadius: BorderRadius.circular(12),
           child: ImageWithPlaceholder(
-            imageUrl: data["message"] ?? '',
-            mediaUrls: mediaItems,
+            imageUrl: widget.data["message"] ?? '',
+            mediaUrls: widget.mediaItems,
           ),
         );
       case "video":
         return VideoPlayerWidget(
-          videoUrl: data["message"] ?? '',
-          mediaUrls: mediaItems,
+          videoUrl: widget.data["message"] ?? '',
+          mediaUrls: widget.mediaItems,
         );
       case "VHolder":
         return Container(
@@ -173,7 +234,7 @@ class MessageBoxWithData extends StatelessWidget {
                 child: Text(
                   'Uploading...',
                   style: TextStyle(
-                    color: themeProvider.themeMode == ThemeMode.dark
+                    color: widget.themeProvider.themeMode == ThemeMode.dark
                         ? Colors.white
                         : Colors.black,
                     fontWeight: FontWeight.bold,
@@ -186,14 +247,14 @@ class MessageBoxWithData extends StatelessWidget {
       case "holder":
         return Stack(
           children: [
-            if (data["message"] is Uint8List)
+            if (widget.data["message"] is Uint8List)
               Image.memory(
-                data["message"],
+                widget.data["message"],
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
                   return Icon(
                     Icons.error,
-                    color: themeProvider.themeMode == ThemeMode.dark
+                    color: widget.themeProvider.themeMode == ThemeMode.dark
                         ? Colors.white
                         : Colors.black,
                     size: 50,
@@ -202,12 +263,12 @@ class MessageBoxWithData extends StatelessWidget {
               )
             else
               Image.network(
-                data["message"],
+                widget.data["message"],
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
                   return Icon(
                     Icons.error,
-                    color: themeProvider.themeMode == ThemeMode.dark
+                    color: widget.themeProvider.themeMode == ThemeMode.dark
                         ? Colors.white
                         : Colors.black,
                     size: 50,
@@ -235,10 +296,10 @@ class MessageBoxWithData extends StatelessWidget {
         );
       case "text":
         return Text(
-          data["message"] ?? '',
+          widget.data["message"] ?? '',
           style: TextStyle(
             fontWeight: FontWeight.normal,
-            color: themeProvider.themeMode == ThemeMode.dark
+            color: widget.themeProvider.themeMode == ThemeMode.dark
                 ? Colors.white
                 : Colors.black,
             fontSize: 16,
@@ -247,7 +308,7 @@ class MessageBoxWithData extends StatelessWidget {
       case "file":
         return GestureDetector(
           onTap: () {
-            _confirmDownload(context, data['message'], data['fileName']);
+            _confirmDownload(context, widget.data['message'], widget.data['fileName']);
           },
           child: Row(
             children: [
@@ -255,14 +316,14 @@ class MessageBoxWithData extends StatelessWidget {
               SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  _formatFileName(data['fileName'], 26) ?? '',
+                  _formatFileName(widget.data['fileName'], 26) ?? '',
                   style: TextStyle(color: Colors.white),
                 ),
               ),
               IconButton(
                 icon: Icon(Icons.download, color: Colors.white),
                 onPressed: () {
-                  _confirmDownload(context, data['message'], data['fileName']);
+                  _confirmDownload(context, widget.data['message'], widget.data['fileName']);
                 },
               ),
             ],
@@ -274,12 +335,12 @@ class MessageBoxWithData extends StatelessWidget {
   }
 
   void showOptionsMenu(BuildContext context) {
-    Timestamp messageTime = data['timeStamp'];
+    Timestamp messageTime = widget.data['timeStamp'];
     DateTime now = DateTime.now();
     Duration difference = now.difference(messageTime.toDate());
     bool isUndoable = difference.inMinutes <= 15;
-    List<String> likes = List<String>.from(data['likes'] ?? []);
-    bool isMyMess = data['senderId'] == authService.getCurrentUserId();
+    List<String> likes = List<String>.from(widget.data['likes'] ?? []);
+    bool isMyMess = widget.data['senderId'] == widget.authService.getCurrentUserId();
 
     showModalBottomSheet(
       context: context,
@@ -290,13 +351,13 @@ class MessageBoxWithData extends StatelessWidget {
             ListTile(
               leading: Icon(
                 Icons.favorite,
-                color: likes.contains(authService.getCurrentUserId()) ? Colors.red : null,
+                color: likes.contains(widget.authService.getCurrentUserId()) ? Colors.red : null,
               ),
               title: Text(
-                  likes.contains(authService.getCurrentUserId()) ? "Unlike Message" : "Like Message"),
+                  likes.contains(widget.authService.getCurrentUserId()) ? "Unlike Message" : "Like Message"),
               onTap: () {
                 Navigator.pop(context);
-                _handleLikeMessage(data['id'], likes.contains(authService.getCurrentUserId()));
+                _handleLikeMessage(widget.data['id'], likes.contains(widget.authService.getCurrentUserId()));
               },
             ),
             ListTile(
@@ -304,7 +365,7 @@ class MessageBoxWithData extends StatelessWidget {
               title: Text("Delete Message"),
               onTap: () {
                 Navigator.pop(context);
-                _handleDeleteMessage(data['id']);
+                _handleDeleteMessage(widget.data['id']);
               },
             ),
             if (isMyMess && isUndoable)
@@ -313,17 +374,17 @@ class MessageBoxWithData extends StatelessWidget {
                 title: Text("Undo Send"),
                 onTap: () {
                   Navigator.pop(context);
-                  chatService.undoSentMessage(
-                      authService.getCurrentUserId(), friendData['id'], data['timeStamp']);
+                  widget.chatService.undoSentMessage(
+                      widget.authService.getCurrentUserId(), widget.friendData['id'], widget.data['timeStamp']);
                 },
               ),
-            if (data["messType"] == null || data["messType"] == "text")
+            if (widget.data["messType"] == null || widget.data["messType"] == "text")
               ListTile(
                 leading: Icon(Icons.copy),
                 title: Text("Copy"),
                 onTap: () {
                   Navigator.pop(context);
-                  Clipboard.setData(ClipboardData(text: data["message"] ?? ''));
+                  Clipboard.setData(ClipboardData(text: widget.data["message"] ?? ''));
                 },
               ),
             ListTile(
@@ -331,7 +392,7 @@ class MessageBoxWithData extends StatelessWidget {
               title: Text("Check"),
               onTap: () {
                 Navigator.pop(context);
-                print("data : $data");
+                print("data : $widget.data");
               },
             )
           ],
@@ -341,13 +402,13 @@ class MessageBoxWithData extends StatelessWidget {
   }
 
   void _handleLikeMessage(String messageId, bool isLiked) async {
-    final userId = authService.getCurrentUserId();
-    await chatService.toggleMessageLike(userId, friendData['id'], messageId);
+    final userId = widget.authService.getCurrentUserId();
+    await widget.chatService.toggleMessageLike(userId, widget.friendData['id'], messageId);
   }
 
   void _handleDeleteMessage(String messageId) async {
-    final userId = authService.getCurrentUserId();
-    await chatService.deleteMessage(userId, friendData['id'], messageId);
+    final userId = widget.authService.getCurrentUserId();
+    await widget.chatService.deleteMessage(userId, widget.friendData['id'], messageId);
   }
 
   String _formatFileName(String fileName, int maxLength) {

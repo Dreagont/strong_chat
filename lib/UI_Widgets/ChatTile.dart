@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:intl/intl.dart';
 import 'package:strong_chat/pages/ChangeTheme.dart';
 
-class ChatTile extends StatelessWidget {
+class ChatTile extends StatefulWidget {
   final String messType;
   final String name;
   final String avatar;
@@ -10,6 +11,7 @@ class ChatTile extends StatelessWidget {
   final String senderPrefix;
   final DateTime timestamp;
   final void Function()? onTap;
+  final void Function()? onOptionsPressed;
   final ThemeProvider theme;
 
   const ChatTile({
@@ -21,19 +23,27 @@ class ChatTile extends StatelessWidget {
     required this.senderPrefix,
     required this.timestamp,
     this.onTap,
+    this.onOptionsPressed,
     required this.theme,
   });
 
   @override
+  State<ChatTile> createState() => _ChatTileState();
+}
+
+class _ChatTileState extends State<ChatTile> {
+  bool isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    String formattedTime = formatTime(timestamp);
+    String formattedTime = formatTime(widget.timestamp);
 
     String displayMessage;
     TextStyle messageStyle = TextStyle(fontSize: 14, color: Colors.grey[600]);
 
-    switch (messType) {
+    switch (widget.messType) {
       case 'text':
-        displayMessage = lastMessage;
+        displayMessage = widget.lastMessage;
         break;
       case 'image':
         displayMessage = '[Sent an image]';
@@ -53,43 +63,86 @@ class ChatTile extends StatelessWidget {
         break;
     }
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        color: theme.themeMode == ThemeMode.dark
-            ? Colors.black
-            : Colors.white,
-        child: Column(
-          children: [
-            ListTile(
-              contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0), // Add spacing inside ListTile
-              leading: CircleAvatar(
-                backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
-                radius: 25,
-                child: avatar.isEmpty ? const Icon(Icons.person, size: 30) : null,
+    return MouseRegion(
+      onEnter: kIsWeb ? (_) => setState(() => isHovered = true) : null,
+      onExit: kIsWeb ? (_) => setState(() => isHovered = false) : null,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: Container(
+          color: widget.theme.themeMode == ThemeMode.dark
+              ? Colors.black
+              : Colors.white,
+          child: Column(
+            children: [
+              Stack(
+                children: [
+                  ListTile(
+                    contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+                    leading: CircleAvatar(
+                      backgroundImage: widget.avatar.isNotEmpty ? NetworkImage(widget.avatar) : null,
+                      radius: 25,
+                      child: widget.avatar.isEmpty ? const Icon(Icons.person, size: 30) : null,
+                    ),
+                    title: Text(
+                      widget.name,
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(
+                      "${widget.senderPrefix}$displayMessage",
+                      style: messageStyle,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          formattedTime,
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
+                        if (kIsWeb && isHovered && widget.onOptionsPressed != null) ...[
+                          SizedBox(width: 8),
+                          Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(16),
+                              onTap: widget.onOptionsPressed,
+                              child: Container(
+                                padding: EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: widget.theme.themeMode == ThemeMode.dark
+                                      ? Colors.grey[800]
+                                      : Colors.grey[200],
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Icon(
+                                  Icons.more_horiz,
+                                  size: 20,
+                                  color: widget.theme.themeMode == ThemeMode.dark
+                                      ? Colors.grey[300]
+                                      : Colors.grey[700],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              title: Text(
-                name,
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              Padding(
+                padding: const EdgeInsets.only(left: 85),
+                child: Divider(
+                  color: widget.theme.themeMode == ThemeMode.dark
+                      ? Colors.grey[900]
+                      : Colors.grey[100],
+                  thickness: 1,
+                  height: 1,
+                ),
               ),
-              subtitle: Text(
-                "$senderPrefix$displayMessage",
-                style: messageStyle,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-              ),
-              trailing: Text(
-                formattedTime,
-                style: TextStyle(color: Colors.grey[600]),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(left: 85), // Adjust this value as needed to align with the text start
-              child: Divider(color: theme.themeMode == ThemeMode.dark
-                  ? Colors.grey[900]
-                  : Colors.grey[100], thickness: 1, height: 1), // Set divider color to grey[900]
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -106,11 +159,11 @@ class ChatTile extends StatelessWidget {
     } else if (difference.inHours < 24) {
       return '${difference.inHours} hour${difference.inHours > 1 ? 's' : ''}';
     } else if (difference.inDays < 7) {
-      return DateFormat('EEE').format(dateTime); // Day of the week (Mon, Tue, Wed, ...)
+      return DateFormat('EEE').format(dateTime);
     } else if (now.year == dateTime.year) {
-      return DateFormat('dd MMM').format(dateTime); // day month
+      return DateFormat('dd MMM').format(dateTime);
     } else {
-      return DateFormat('dd MMM yyyy').format(dateTime); // day month year
+      return DateFormat('dd MMM yyyy').format(dateTime);
     }
   }
 }

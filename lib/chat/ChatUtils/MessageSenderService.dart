@@ -16,6 +16,7 @@ class MessageSenderService {
   final String friendId;
   final Function(Map<String, dynamic>) onMessageAdded;
   final VoidCallback onMessageSent;
+  final BuildContext context;
 
   MessageSenderService({
     required this.chatService,
@@ -24,6 +25,7 @@ class MessageSenderService {
     required this.friendId,
     required this.onMessageAdded,
     required this.onMessageSent,
+    required this.context
   });
 
   String _getChatBoxId() {
@@ -123,20 +125,20 @@ class MessageSenderService {
   }
 
   Future<void> sendFileMessage() async {
-    FilePickerResult? result = await storageService.pickFile();
+    FilePickerResult? result = await storageService.pickFile(context);
     if (result != null) {
       final Timestamp timestamp = Timestamp.now();
       String chatBoxId = _getChatBoxId();
 
       Map<String, dynamic> tempMessage = {
-        'message': '',
-        'messType': 'file',
+        'message': 'Sending File.....',
+        'messType': 'text',
         'timeStamp': timestamp,
         'senderId': authService.getCurrentUserId(),
         'fileName': 'sending file....'
       };
 
-      //onMessageAdded(tempMessage);
+      onMessageAdded(tempMessage);
       await storageService.uploadFile(result,
           timestamp.toString(),
           'ChatData/$chatBoxId',

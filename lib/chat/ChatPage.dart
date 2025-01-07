@@ -58,6 +58,7 @@ class _ChatPageState extends State<ChatPage> {
       friendId: widget.friendData['id'],
       onMessageAdded: _handleMessageAdded,
       onMessageSent: goToBot,
+      context: context
     );
 
     scrollController.addListener(_scrollListener);
@@ -264,7 +265,7 @@ class _ChatPageState extends State<ChatPage> {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return CircularProgressIndicator();
                   }
-                  final nickname = snapshot.data ?? "No Nickname";
+                  final nickname = snapshot.data ?? widget.friendData['name'];
                   final lastName = nickname.split(' ').last;
                   return Text(
                     lastName,

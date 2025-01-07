@@ -130,6 +130,7 @@ class _LoginPageState extends State<LoginPage> {
               controller: _passwordController,
               decoration: InputDecoration(labelText: 'Password'),
               obscureText: true,
+              onSubmitted: (_) => _login(),
             ),
             SizedBox(height: 20),
             ElevatedButton(

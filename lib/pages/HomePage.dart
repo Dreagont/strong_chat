@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:strong_chat/pages/SearchPage.dart';
 
 import '../services/AuthService.dart';
 import '../services/FireStoreService.dart';
@@ -23,7 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   final FireStoreService fireStoreService = FireStoreService();
   final AuthService authService = AuthService();
-  FocusNode _focusNode = FocusNode(); // FocusNode to manage TextField focus
+  FocusNode _focusNode = FocusNode();
 
   @override
   void initState() {
@@ -57,10 +58,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _addFriend() {
-    // Handle add friend action here
-  }
-
   @override
   void dispose() {
     _focusNode.dispose(); // Dispose the FocusNode when the widget is disposed
@@ -88,28 +85,29 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(
                   child: GestureDetector(
                     onTap: () {
-                      _focusNode.unfocus(); // Unfocus TextField when tapping outside
+                      _focusNode.unfocus();
                     },
-                    child: TextField(
-                      focusNode: _focusNode, // Assign FocusNode directly here
-                      decoration: InputDecoration(
-                        hintText: 'Tìm kiếm',
-                        border: InputBorder.none,
-                        hintStyle: TextStyle(color: Colors.white60, fontSize: 18),
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => SearchPage()),
+                        );
+                      },
+                      style: ButtonStyle(
+                        mouseCursor: MaterialStateProperty.all<MouseCursor>(SystemMouseCursors.basic),
                       ),
-                      style: TextStyle(color: Colors.white, fontSize: 18),
-                    ),
+                      child: Text(
+                        "Search",
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                    )
                   ),
                 ),
                 IconButton(
                   icon: Icon(Icons.qr_code_scanner_outlined, color: Colors.white, size: 30),
                   onPressed: _navigateToScanQRCode,
                 ),
-                if (_selectedIndex == 0)
-                  IconButton(
-                    icon: Icon(Icons.add, color: Colors.white, size: 30),
-                    onPressed: _addFriend,
-                  ),
               ],
             ),
           ),

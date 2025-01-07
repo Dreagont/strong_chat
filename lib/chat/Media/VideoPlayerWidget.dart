@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:strong_chat/chat/Media/FullScreenMediaView.dart';
 import 'package:video_player/video_player.dart';
-
-import 'FullscreenVideoPlayer.dart';
+import 'FullScreenMediaView.dart';
 import 'VideoPlayerControllerManager.dart';
 
 class VideoPlayerWidget extends StatefulWidget {
@@ -18,6 +16,7 @@ class VideoPlayerWidget extends StatefulWidget {
 class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   late VideoPlayerController _controller;
   bool isFullscreen = false;
+  bool wasPlayingBeforeFullscreen = false;
 
   @override
   void initState() {
@@ -28,6 +27,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
       })
       ..setLooping(false);
     _controller.addListener(_handleVideoEnd);
+    VideoPlayerControllerManager.registerController(_controller);
   }
 
   void _handleVideoEnd() {
@@ -47,6 +47,16 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   }
 
   void _toggleFullscreen() async {
+    // Store the playing state before going fullscreen
+    wasPlayingBeforeFullscreen = _controller.value.isPlaying;
+
+    // Pause the current video before going fullscreen
+    if (_controller.value.isPlaying) {
+      _controller.pause();
+    }
+
+    VideoPlayerControllerManager.setActiveController(_controller);
+
     final int currentIndex = widget.mediaUrls.indexWhere((mediaItem) => mediaItem.url == widget.videoUrl);
 
     final result = await Navigator.of(context).push(
@@ -58,16 +68,14 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
       ),
     );
 
-    // When exiting fullscreen, reset the fullscreen state.
-    if (result == 'exit_fullscreen') {
-      setState(() {
-        isFullscreen = false;
-      });
-    } else {
-      setState(() {
-        isFullscreen = true;
-      });
+    // Only resume playing if it was playing before going fullscreen and hasn't reached the end
+    if (wasPlayingBeforeFullscreen && _controller.value.position < _controller.value.duration) {
+      _controller.play();
     }
+
+    setState(() {
+      isFullscreen = result == 'exit_fullscreen' ? false : true;
+    });
   }
 
   @override

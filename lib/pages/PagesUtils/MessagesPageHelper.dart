@@ -51,6 +51,12 @@ Widget createChatTile({
           lastMessage: lastMessage,
           senderPrefix: senderPrefix,
           timestamp: timestamp,
+          onOptionsPressed: () => _showOptionsBottomSheet(
+            context,
+            friendData,
+            currentUserId,
+            onOptionsSelected,
+          ),
           onTap: () {
             if (friendData['id'] != currentUserId) { // Compare IDs first
               fireStoreService.getMessage(currentUserId, friendData['id'])

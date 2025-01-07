@@ -30,12 +30,66 @@ class StorageService with ChangeNotifier {
     return await picker.pickVideo(source: ImageSource.gallery);
   }
 
-  Future<FilePickerResult?> pickFile() async {
-    return await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf', 'doc', 'docx', 'txt', 'xls', 'xlsx', 'ppt', 'pptx'],
-    );
+  Future<FilePickerResult?> pickFile(BuildContext context) async {
+    try {
+      final Set<String> excludedExtensions = {
+        'jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff', 'svg', 'ico', 'webp', 'heic', 'heif',
+        'mp4', 'mkv', 'avi', 'mov', 'flv', 'wmv', 'webm', '3gp', 'm4v', 'mpg', 'mpeg'
+      };
+
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.any,
+        allowMultiple: false,
+        withData: kIsWeb,
+        onFileLoading: (FilePickerStatus status) {
+          if (status == FilePickerStatus.picking) {
+          }
+        },
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        final file = result.files.first;
+        final String fileName = file.name.toLowerCase();
+        final String fileExtension = fileName.contains('.')
+            ? fileName.split('.').last
+            : '';
+
+        if (excludedExtensions.contains(fileExtension)) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please select a document file, not an image or video.'),
+              duration: Duration(seconds: 3),
+            ),
+          );
+          return null;
+        }
+
+        final bool isFileTooLarge = file.size > 50 * 1024 * 1024;
+        if (isFileTooLarge) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('File size exceeds 100MB limit. Please choose a smaller file.'),
+              duration: Duration(seconds: 3),
+            ),
+          );
+          return null;
+        }
+
+        return result;
+      }
+
+      return null;
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error picking file: ${e.toString()}'),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      return null;
+    }
   }
+
 
   Future<void> uploadAvatar(String userId, String path) async {
     isUploading = true;
