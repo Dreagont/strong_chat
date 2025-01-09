@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../UI_Widgets/InputBox.dart';
 import '../../services/AuthService.dart';
@@ -31,6 +33,17 @@ class UserInput extends StatelessWidget {
     required this.sendFileMessage,
   });
 
+  void _handleKeyEvent(RawKeyEvent event) {
+    if (event is RawKeyDownEvent) {
+      if (event.logicalKey == LogicalKeyboardKey.enter) {
+        if (event.isShiftPressed) {
+        } else {
+          sendTextMessage();
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
@@ -41,6 +54,7 @@ class UserInput extends StatelessWidget {
       child: Container(
         color: themeProvider.themeMode == ThemeMode.dark ? Colors.grey[900] : Colors.white,
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             IconButton(
               color: color,
@@ -48,17 +62,24 @@ class UserInput extends StatelessWidget {
               onPressed: () => showMediaOptions(context),
             ),
             Expanded(
-              child: TextField(
-                controller: messController,
-                focusNode: focusNode,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (value) {
-                  sendTextMessage();
-                },
-                decoration: InputDecoration(
-                  hintText: "Type your message",
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 10),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: RawKeyboardListener(
+                  focusNode: focusNode,
+                  onKey: kIsWeb ? _handleKeyEvent : null,
+                  child: TextFormField(
+                    controller: messController,
+                    maxLines: 5,
+                    minLines: 1,
+                    textInputAction: TextInputAction.newline,
+                    keyboardType: TextInputType.multiline,
+                    decoration: InputDecoration(
+                      hintText: "Type your message",
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      isDense: true,
+                    ),
+                  ),
                 ),
               ),
             ),

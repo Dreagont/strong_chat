@@ -38,8 +38,10 @@ class MessageSenderService {
     if (text.isNotEmpty) {
       Timestamp timestamp = Timestamp.now();
 
+      String formattedText = text.trim();
+
       Map<String, dynamic> tempMessage = {
-        'message': text,
+        'message': formattedText,
         'messType': 'text',
         'timeStamp': timestamp,
         'senderId': authService.getCurrentUserId(),
@@ -47,7 +49,7 @@ class MessageSenderService {
       };
 
       onMessageAdded(tempMessage);
-      await chatService.sendMessage(friendId, text, 'text', "");
+      await chatService.sendMessage(friendId, formattedText, 'text', "");
       onMessageSent();
     }
   }

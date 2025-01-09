@@ -274,7 +274,7 @@ class _ChatPageState extends State<ChatPage> {
                       fontWeight: FontWeight.bold,
                       color: themeProvider.themeMode == ThemeMode.dark
                           ? Colors.white
-                          : Colors.black,
+                          : Colors.white,
                     ),
                   );
                 },
