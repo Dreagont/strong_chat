@@ -139,7 +139,7 @@ class _MessageBoxWithDataState extends State<MessageBoxWithData> {
                             ? _getMaxWidth(context) * (3/4)
                             : double.infinity,
                       ),
-                      child: _buildMessageContent(context),
+                      child: _buildMessageContent(context, isMyMess),
                     ),
                   ),
                 ),
@@ -205,8 +205,8 @@ class _MessageBoxWithDataState extends State<MessageBoxWithData> {
       ),
     );
   }
-  
-  Widget _buildMessageContent(BuildContext context) {
+
+  Widget _buildMessageContent(BuildContext context, bool isMyMess) {
     switch (widget.data["messType"]) {
       case "image":
         return ClipRRect(
@@ -255,7 +255,7 @@ class _MessageBoxWithDataState extends State<MessageBoxWithData> {
                   return Icon(
                     Icons.error,
                     color: widget.themeProvider.themeMode == ThemeMode.dark
-                        ? Colors.white
+                        ? isMyMess ? Colors.white : Colors.black
                         : Colors.black,
                     size: 50,
                   );
@@ -299,9 +299,9 @@ class _MessageBoxWithDataState extends State<MessageBoxWithData> {
           widget.data["message"] ?? '',
           style: TextStyle(
             fontWeight: FontWeight.normal,
-            color: widget.themeProvider.themeMode == ThemeMode.dark
-                ? Colors.white
-                : Colors.white,
+            color:  widget.themeProvider.themeMode == ThemeMode.dark
+                ? isMyMess ? Colors.white : Colors.white
+                : isMyMess ? Colors.white : Colors.black,
             fontSize: 16,
           ),
         );
