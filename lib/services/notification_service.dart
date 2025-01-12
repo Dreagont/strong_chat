@@ -9,6 +9,8 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
+import 'package:universal_html/html.dart';
 
 class Constant {
   static const String BASE_URL =
@@ -38,6 +40,9 @@ class NotificationService {
     required String token,
   }) async {
     try {
+      if(kIsWeb){
+        document.title = title;
+      }
       String accessToken = await getAccessToken();
       Map<String, dynamic> payload = {
         'message': {
@@ -83,29 +88,45 @@ class LocalNotificationService {
 
   Future<void> uploadFcmToken() async {
     try {
-      String? token = await FirebaseMessaging.instance.getToken();
-      if (token != null) {
-        debugPrint("FCM Token: $token");
-        await firebaseFirestore.collection('Users').doc(_currentUser!.uid).update({
-          'notificationToken': token,
-        });
+      String? token;
+      if (kIsWeb) {
+        token = await FirebaseMessaging.instance.getToken(
+          vapidKey: "BPYx6LRkuqxoL_kPj0-blZpIvRPP6zarU_j8nYfBoZawQPFAnqPgcpdquNiz0bXAugUHdqXYFiNSL2emEgr_xxw",
+        );
+        if (token != null) {
+          debugPrint("Web FCM Token: $token");
+          await firebaseFirestore.collection('Users').doc(_currentUser!.uid).update({
+            'notificationToken': token,
+          });
+        }
+      } else  {
+        token = await FirebaseMessaging.instance.getToken();
+        if (token != null) {
+          debugPrint("Android FCM Token: $token");
+          await firebaseFirestore.collection('Users').doc(_currentUser!.uid).update({
+            'notificationToken': token,
+          });
+        }
       }
-      FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
-        debugPrint("New FCM Token: $newToken");
-        await firebaseFirestore.collection('Users').doc(_currentUser!.uid).update({
-          'notificationToken': newToken,
-        });
-      });
     } catch (e) {
       debugPrint("Error uploading FCM token: $e");
     }
   }
 
+
   Future<void> logout() async {
     try {
-      await firebaseFirestore.collection('Users').doc(_currentUser!.uid).update({
+      await firebaseFirestore.collection('users').doc(_currentUser!.uid).update({
         'notificationToken': "",
       });
+      if (kIsWeb) {
+        await FirebaseMessaging.instance.deleteToken(); // Remove the token from localStorage
+        print("Web token cleared.");
+      } else {
+        await FirebaseMessaging.instance.deleteToken();
+        print("Android token cleared.");
+      }
+      print("User logged out.");
     } catch (e) {
       debugPrint("Error clearing FCM token: $e");
     }

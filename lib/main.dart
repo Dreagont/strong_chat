@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:strong_chat/auth/AuthGate.dart';
@@ -7,6 +8,9 @@ import 'package:strong_chat/firebase_options.dart';
 import 'package:strong_chat/pages/ChangeTheme.dart';
 import 'package:strong_chat/services/FireStoreService.dart';
 import 'package:strong_chat/services/notification_service.dart';
+import 'dart:html' as html;
+
+import 'package:universal_html/html.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,11 +34,24 @@ class _MyAppState extends State<MyApp> {
   }
 
   void notificationHandler() {
-    FirebaseMessaging.onMessage.listen((event) async{
+    FirebaseMessaging.onMessage.listen((event) async {
       print(event.notification!.title);
       LocalNotificationService().showNotification(event);
+      if (kIsWeb) {
+        final title = event.notification!.title!;
+        document.title = "$title";
+      }
     });
+    if (kIsWeb) {
+      String originalTitle = document.title;
+      document.addEventListener('visibilitychange', (event) {
+        if (document.visibilityState == 'visible') {
+          document.title = originalTitle;
+        }
+      });
+    }
   }
+
 
 
   @override
