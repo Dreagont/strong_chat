@@ -40,9 +40,6 @@ class NotificationService {
     required String token,
   }) async {
     try {
-      if(kIsWeb){
-        document.title = title;
-      }
       String accessToken = await getAccessToken();
       Map<String, dynamic> payload = {
         'message': {
