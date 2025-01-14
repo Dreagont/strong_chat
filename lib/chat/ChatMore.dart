@@ -8,15 +8,21 @@ import '../pages/ChangeTheme.dart';
 import '../pages/PagesUtils/ChatManager.dart';
 import '../pages/PagesUtils/MessagesPageHelper.dart';
 import '../pages/contacts/UserProfilePage.dart';
+import 'ChatPage.dart';
+import 'MessageSearchPage.dart';
 
 class ChatMore extends StatefulWidget {
   final Map<String, dynamic> friendData;
   final List<Map<String, dynamic>> allMessages;
+  final String userName;
+  final String userAvatar;
 
   const ChatMore({
     Key? key,
     required this.friendData,
     required this.allMessages,
+    required this.userName,
+    required this.userAvatar,
   }) : super(key: key);
 
   @override
@@ -156,7 +162,28 @@ class _ChatMoreState extends State<ChatMore> {
                     context: context,
                     title: 'Find Message',
                     icon: Icons.search,
-                    onTap: () {},
+                    onTap: () {
+                      // Navigator.push(
+                      //   context,
+                      //   MaterialPageRoute(
+                      //     builder: (context) => MessageSearchPage(
+                      //       messages: widget.allMessages,
+                      //       friendData: widget.friendData,
+                      //       userName: widget.userName,
+                      //       userAvatar: widget.userAvatar,
+                      //     ),
+                      //   ),
+                      // );
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ChatPage(
+                            friendData: widget.friendData,
+                            isOpenSearch: true,
+                          ),
+                        ),
+                      );
+                    },
                     showDivider: true,
                   ),
                   _buildSection(

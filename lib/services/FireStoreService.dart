@@ -154,7 +154,7 @@ class FireStoreService {
   }
 
   Future<void> _updateUserChatList(String userId, String friendId) async {
-    final String friendName = await _fetchUserName(friendId);
+    final String friendName = await fetchUserName(friendId);
     final Timestamp currentTimestamp = Timestamp.now();
 
     final querySnapshot = await fireStore
@@ -181,10 +181,16 @@ class FireStoreService {
     }
   }
 
-  Future<String> _fetchUserName(String userId) async {
+  Future<String> fetchUserName(String userId) async {
     final DocumentSnapshot userSnapshot =
         await fireStore.collection("Users").doc(userId).get();
     return userSnapshot.get('name') ?? 'User';
+  }
+
+  Future<String> fetchUserAvatar(String userId) async {
+    final DocumentSnapshot userSnapshot =
+    await fireStore.collection("Users").doc(userId).get();
+    return userSnapshot.get('avatar') ?? 'User';
   }
 
   Future<void> _saveMessageToChatRoom(String chatBoxId, Message message) async {
@@ -199,7 +205,7 @@ class FireStoreService {
       try {
         // Fetch the friend's notification token and sender's name
         final friendToken = await getUserToken(message.friendId);
-        final senderName = await _fetchUserName(message.senderId);
+        final senderName = await fetchUserName(message.senderId);
         // Send the notification
         final isNotificationSent = await NotificationService().pushNotification(
           title: 'New Message From $senderName',
@@ -567,4 +573,3 @@ class FireStoreService {
     await fireStore.collection('Users').doc(userId).update(userInfo);
   }
 }
-

@@ -21,10 +21,12 @@ import 'Media/FullScreenMediaView.dart';
 
 class ChatPage extends StatefulWidget {
   final Map<String, dynamic> friendData;
+  final bool? isOpenSearch;
 
   const ChatPage({
     super.key,
     required this.friendData,
+    this.isOpenSearch
   });
 
   @override
@@ -36,6 +38,7 @@ class _ChatPageState extends State<ChatPage> {
   final FireStoreService chatService = FireStoreService();
   final AuthService authService = AuthService();
   final StorageService storageService = StorageService();
+
   late final MessageSenderService messageSender;
   FocusNode focusNode = FocusNode();
   ScrollController scrollController = ScrollController();
@@ -48,9 +51,101 @@ class _ChatPageState extends State<ChatPage> {
   StreamSubscription? _messageSubscription;
   bool isBlocked = false;
 
+  String userName = '';
+  String userAvatar = '';
+
+  Future<void> _loadUserData() async {
+    final userId = authService.getCurrentUserId();
+    try {
+      final name = await chatService.fetchUserName(userId);
+      final avatar = await chatService.fetchUserAvatar(userId);
+      setState(() {
+        userName = name;
+        userAvatar = avatar;
+      });
+    } catch (e) {
+      print('Error loading user data: $e');
+    }
+  }
+
+  bool isSearching = false;
+  TextEditingController searchController = TextEditingController();
+  List<Map<String, dynamic>> searchResults = [];
+
+  void performSearch(String query) {
+    if (query.isEmpty) {
+      setState(() {
+        searchResults = [];
+      });
+      return;
+    }
+
+    setState(() {
+      searchResults = allMessages.where((message) {
+        if (message['messType'] != 'text') return false;
+        final messageText = message['message'].toString().toLowerCase();
+        return messageText.contains(query.toLowerCase());
+      }).toList();
+    });
+  }
+
+  void scrollToMessage(Map<String, dynamic> searchMessage) {
+    setState(() {
+      isSearching = false;
+      searchController.clear();
+      searchResults.clear();
+    });
+
+    final targetIndex = allMessages.indexWhere(
+          (msg) => msg['timeStamp'] == searchMessage['timeStamp'] &&
+          msg['message'] == searchMessage['message'],
+    );
+
+    if (targetIndex == -1) return;
+
+    setState(() {
+      displayedMessages = allMessages.sublist(0, targetIndex + 1);
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!scrollController.hasClients) return;
+
+      double baseHeight = 80.0;
+      double mediaHeight = 200.0;
+
+      double totalOffset = 0;
+      for (int i = 0; i < targetIndex; i++) {
+        var msg = allMessages[i];
+        if (msg['messType'] == 'image' || msg['messType'] == 'video') {
+          totalOffset += mediaHeight;
+        } else {
+          totalOffset += baseHeight;
+        }
+      }
+
+      double maxScroll = scrollController.position.maxScrollExtent;
+      double targetScroll = min(totalOffset, maxScroll);
+
+      scrollController.animateTo(
+        targetScroll,
+        duration: Duration(milliseconds: 500),
+        curve: Curves.easeOutQuad,
+      );
+    });
+  }
+
   @override
   void initState() {
     super.initState();
+    _loadUserData();
+
+    if (widget.isOpenSearch == true) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {
+          isSearching = true;
+        });
+      });
+    }
     messageSender = MessageSenderService(
       chatService: chatService,
       authService: authService,
@@ -239,6 +334,61 @@ class _ChatPageState extends State<ChatPage> {
     return DateFormat('HH:mm dd/MM/yyyy').format(messageTime);
   }
 
+  Widget buildSearchResults() {
+    return ListView.builder(
+      itemCount: searchResults.length,
+      itemBuilder: (context, index) {
+        final message = searchResults[index];
+        final isSentByMe = message['senderId'] == authService.getCurrentUserId();
+
+        return Container(
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: ListTile(
+            leading: isSentByMe
+                ? CircleAvatar(
+              radius: 20,
+              backgroundImage: NetworkImage(userAvatar),
+            )
+                : CircleAvatar(
+              radius: 20,
+              backgroundImage: NetworkImage(widget.friendData['avatar']),
+            ),
+            title: Row(
+              children: [
+                Text(
+                  isSentByMe ? 'You' : widget.friendData['name'],
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: ThemeProvider().themeMode == ThemeMode.dark
+                        ? Colors.white
+                        : Colors.black,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  formatTimestamp(message['timeStamp']),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+            subtitle: Text(
+              message['message'],
+              style: TextStyle(
+                color: ThemeProvider().themeMode == ThemeMode.dark
+                    ? Colors.white70
+                    : Colors.black87,
+              ),
+            ),
+            onTap: () => scrollToMessage(message),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
@@ -315,13 +465,29 @@ class _ChatPageState extends State<ChatPage> {
             },
           ),
           IconButton(
+            icon: Icon(isSearching ? Icons.close : Icons.search),
+            color: Colors.white,
+            onPressed: () {
+              setState(() {
+                isSearching = !isSearching;
+                if (!isSearching) {
+                  searchController.clear();
+                  searchResults.clear();
+                }
+              });
+            },
+          ),
+          IconButton(
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
                     builder: (context) => ChatMore(
                         friendData: widget.friendData,
-                        allMessages: allMessages)),
+                        allMessages: allMessages,
+                        userName:userName,
+                        userAvatar: userAvatar,
+                    )),
               );
             },
             icon: Icon(Icons.more_vert),
@@ -331,8 +497,48 @@ class _ChatPageState extends State<ChatPage> {
       ),
       body: Column(
         children: [
+          if (isSearching)
+            Container(
+              color: themeProvider.themeMode == ThemeMode.dark
+                  ? Colors.grey[850]
+                  : Colors.white,
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: TextField(
+                controller: searchController,
+                style: TextStyle(
+                  color: themeProvider.themeMode == ThemeMode.dark
+                      ? Colors.white
+                      : Colors.black,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Search messages...',
+                  hintStyle: TextStyle(
+                    color: themeProvider.themeMode == ThemeMode.dark
+                        ? Colors.grey[400]
+                        : Colors.grey[600],
+                  ),
+                  fillColor: themeProvider.themeMode == ThemeMode.dark
+                      ? Colors.grey[700]
+                      : Colors.white,
+                  filled: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: BorderSide.none,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    color: themeProvider.themeMode == ThemeMode.dark
+                        ? Colors.grey[400]
+                        : Colors.grey[600],
+                  ),
+                ),
+                onChanged: performSearch,
+              ),
+            ),
           Expanded(
-            child: MessageList(
+            child: searchResults.isNotEmpty
+                ? buildSearchResults()
+                : MessageList(
                 displayedMessages: displayedMessages,
                 allMessages: allMessages,
                 scrollController: scrollController,
