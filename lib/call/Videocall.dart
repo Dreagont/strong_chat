@@ -1,157 +1,222 @@
 import 'package:flutter/material.dart';
-import 'package:camera/camera.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:strong_chat/services/notification_service.dart';
+
+import '../services/Signalling.dart';
 
 class VideoCallPage extends StatefulWidget {
-  final List<CameraDescription> cameras;
-  final bool isCameraOn; // Add this parameter
 
-  const VideoCallPage({
-    Key? key,
-    required this.cameras,
-    this.isCameraOn = true, // Default value is true
-  }) : super(key: key);
+  final number;
+  final String notificationToken;
+  final String CaleeName;
+  final String CallerName;
+  final String roomId;
+  const VideoCallPage({super.key, required this.number, required this.notificationToken, required this.CaleeName, required this.CallerName, required this.roomId});
 
   @override
-  _VideoCallPageState createState() => _VideoCallPageState();
+  State<VideoCallPage> createState() => _VideoCallPageState();
 }
 
 class _VideoCallPageState extends State<VideoCallPage> {
-  CameraController? _controller;
-  late bool _isFrontCamera;
-  late bool _isMicMuted;
-  late bool _isCameraOn;
+  Signaling signaling = Signaling();
+  RTCVideoRenderer _localRenderer = RTCVideoRenderer();
+  RTCVideoRenderer _remoteRenderer = RTCVideoRenderer();
+  bool isRemoteConnected = false;
+  bool isCameraOn = true;
+  bool isMicOn = true;
+  String? roomId;
+  TextEditingController textEditingController = TextEditingController(text: '');
 
   @override
   void initState() {
     super.initState();
-    _isFrontCamera = true;
-    _isMicMuted = false;
-    _isCameraOn = widget.isCameraOn; // Initialize from the parameter
 
-    if (_isCameraOn) {
-      _initializeCamera();
-    }
+    _initializeMediaAndCreateRoom();
   }
 
-  void _initializeCamera() {
-    if (!_isCameraOn) return;
+  Future<void> _initializeMediaAndCreateRoom() async {
+    try {
+      await _localRenderer.initialize();
+      await _remoteRenderer.initialize();
 
-    _controller = CameraController(
-      widget.cameras[_isFrontCamera ? 1 : 0],
-      ResolutionPreset.high,
-    );
+      await signaling.openUserMedia(_localRenderer, _remoteRenderer);
 
-    _controller!.initialize().then((_) {
-      if (!mounted) return;
-      setState(() {});
-    }).catchError((e) {
-      print("Camera initialization error: $e");
-    });
-  }
+      signaling.onAddRemoteStream = (stream) {
+        setState(() {
+          _remoteRenderer.srcObject = stream;
+          isRemoteConnected = true;
+        });
+      };
 
-  void _switchCamera() {
-    if (!_isCameraOn || _controller == null) return;
-    setState(() {
-      _isFrontCamera = !_isFrontCamera;
-    });
-    _initializeCamera();
-  }
+      print("hello ${widget.notificationToken}");
+      print("hello ${widget.CaleeName}");
 
-  void _toggleMic() {
-    setState(() {
-      _isMicMuted = !_isMicMuted;
-    });
-  }
+      signaling.onRemoveRemoteStream = () {
+        setState(() {
+          _remoteRenderer.srcObject = null;
+          isRemoteConnected = false;
+        });
+      };
 
-  void _toggleCamera() {
-    setState(() {
-      _isCameraOn = !_isCameraOn;
-      if (_isCameraOn) {
-        _initializeCamera();
-      } else {
-        _controller?.dispose();
-        _controller = null;
+      if(widget.number == 1){
+        roomId = await signaling.createRoom(_remoteRenderer);
+        setState(() {
+          textEditingController.text = roomId!;
+        });
+        NotificationService().pushCallNotification(
+            title: "Calling",
+            body: "From ${widget.CallerName}",
+            token: widget.notificationToken,
+            roomId: roomId!
+        );
       }
-    });
-  }
 
-  void _hangUp() {
-    Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to initialize media: $e')),
+      );
+    }
   }
 
   @override
   void dispose() {
-    _controller?.dispose();
+    _localRenderer.dispose();
+    _remoteRenderer.dispose();
     super.dispose();
   }
 
+  void toggleCamera() {
+    if (isCameraOn) {
+      signaling.stopCamera();
+    } else {
+      signaling.startCamera(_localRenderer);
+    }
+    setState(() {
+      isCameraOn = !isCameraOn;
+    });
+  }
+
+  // Toggle microphone on/off
+  void toggleMic() {
+    if (isMicOn) {
+      signaling.stopMic(); // Mute the microphone
+    } else {
+      signaling.startMic(); // Unmute the microphone
+    }
+    setState(() {
+      isMicOn = !isMicOn;
+    });
+  }
+
+
   @override
   Widget build(BuildContext context) {
-    if (_isCameraOn && (_controller == null || !_controller!.value.isInitialized)) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    final cameraPreview = _controller != null
-        ? AspectRatio(
-      aspectRatio: _controller!.value.aspectRatio,
-      child: CameraPreview(_controller!),
-    )
-        : Container(color: Colors.black);
-
-    final transformedCameraPreview = _isFrontCamera
-        ? Transform(
-      alignment: Alignment.center,
-      transform: Matrix4.rotationY(3.14159),
-      child: cameraPreview,
-    )
-        : cameraPreview;
-
     return Scaffold(
+      backgroundColor: Colors.black,
       body: Stack(
         children: [
+          // Hiển thị video full màn hình nếu không có kết nối remote
           Positioned.fill(
-            child: _isCameraOn
-                ? transformedCameraPreview
-                : Container(color: Colors.black),
-          ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 40.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  FloatingActionButton(
-                    onPressed: _toggleMic,
-                    backgroundColor: _isMicMuted ? Colors.red : Colors.green,
-                    child: Icon(_isMicMuted ? Icons.mic_off : Icons.mic),
-                  ),
-                  FloatingActionButton(
-                    onPressed: _hangUp,
-                    backgroundColor: Colors.red,
-                    child: Icon(Icons.call_end),
-                  ),
-                  FloatingActionButton(
-                    onPressed: _toggleCamera,
-                    backgroundColor: _isCameraOn ? Colors.green : Colors.red,
-                    child: Icon(
-                        _isCameraOn ? Icons.videocam : Icons.videocam_off),
-                  ),
-                ],
-              ),
+            child: RTCVideoView(
+              isRemoteConnected ? _remoteRenderer : _localRenderer,
+              objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+              mirror: !isRemoteConnected, // Chỉ mirror khi là local
             ),
           ),
-          if (_isCameraOn)
+          // Khi có remote, thu nhỏ local video
+          if (isRemoteConnected)
             Positioned(
-              top: 60,
+              top: 40,
               right: 20,
-              child: FloatingActionButton(
-                backgroundColor: Colors.transparent,
-                elevation: 0,
-                onPressed: _switchCamera,
-                child: Icon(Icons.flip_camera_ios_outlined, color: Colors.white),
+              child: Container(
+                width: 120,
+                height: 160,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+                child: RTCVideoView(
+                  _localRenderer,
+                  mirror: true,
+                  objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                ),
               ),
             ),
+          // Thanh nhập roomId
+          Positioned(
+            top: 20,
+            left: 20,
+            right: 20,
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: textEditingController,
+                    style: TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Enter Room ID',
+                      hintStyle: TextStyle(color: Colors.white54),
+                      filled: true,
+                      fillColor: Colors.black.withOpacity(0.5),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 10),
+                IconButton(
+                  onPressed: () {
+                    signaling.joinRoom(
+                      textEditingController.text.trim(),
+                      _remoteRenderer,
+                    );
+                  },
+                  icon: Icon(Icons.meeting_room, color: Colors.white),
+                  iconSize: 32,
+                ),
+              ],
+            ),
+          ),
+          // Thanh điều khiển
+          Positioned(
+            bottom: 20,
+            left: 0,
+            right: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                IconButton(
+                  onPressed: toggleCamera, // Toggle camera on/off
+                  icon: Icon(
+                    isCameraOn ? Icons.videocam : Icons.videocam_off,
+                    color: Colors.white,
+                  ),
+                  iconSize: 32,
+                ),
+                IconButton(
+                  onPressed: toggleMic, // Toggle mic on/off
+                  icon: Icon(
+                    isMicOn ? Icons.mic : Icons.mic_off,
+                    color: Colors.white,
+                  ),
+                  iconSize: 32,
+                ),
+                IconButton(
+                  onPressed: () {
+                    signaling.hangUp(_localRenderer);
+                    setState(() {
+                      isRemoteConnected = false;
+                    });
+                    Navigator.pop(context);
+                  },
+                  icon: Icon(Icons.call_end, color: Colors.red),
+                  iconSize: 32,
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

@@ -440,28 +440,36 @@ class _ChatPageState extends State<ChatPage> {
             icon: Icon(Icons.call_outlined),
             color: Colors.white,
             onPressed: () async {
-              final cameras = await availableCameras();
+              final name = await chatService.fetchUserName(userId);
               Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => VideoCallPage(
-                            cameras: cameras,
-                            isCameraOn: false,
-                          )));
+                context,
+                MaterialPageRoute(
+                  builder: (context) => VideoCallPage(
+                    number: 1,
+                    notificationToken: widget.friendData['notificationToken'],
+                    CaleeName: widget.friendData['name'],
+                    CallerName: name,
+                    roomId: '',),
+                ),
+              );
             },
           ),
           IconButton(
             icon: Icon(Icons.videocam_outlined),
             color: Colors.white,
             onPressed: () async {
-              final cameras = await availableCameras();
+              final name = await chatService.fetchUserName(userId);
               Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => VideoCallPage(
-                            cameras: cameras,
-                            isCameraOn: true,
-                          )));
+                context,
+                MaterialPageRoute(
+                  builder: (context) => VideoCallPage(
+                    number: 2,
+                    notificationToken: widget.friendData['notificationToken'],
+                    CaleeName: widget.friendData['name'],
+                    CallerName: name,
+                    roomId: '',),
+                ),
+              );
             },
           ),
           IconButton(
@@ -478,20 +486,21 @@ class _ChatPageState extends State<ChatPage> {
             },
           ),
           IconButton(
+            icon: Icon(Icons.more_vert),
+            color: Colors.white,
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => ChatMore(
-                        friendData: widget.friendData,
-                        allMessages: allMessages,
-                        userName:userName,
-                        userAvatar: userAvatar,
-                    )),
+                  builder: (context) => ChatMore(
+                    friendData: widget.friendData,
+                    allMessages: allMessages,
+                    userName: userName,
+                    userAvatar: userAvatar,
+                  ),
+                ),
               );
             },
-            icon: Icon(Icons.more_vert),
-            color: Colors.white,
           ),
         ],
       ),

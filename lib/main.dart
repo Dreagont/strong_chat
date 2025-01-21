@@ -8,7 +8,6 @@ import 'package:strong_chat/firebase_options.dart';
 import 'package:strong_chat/pages/ChangeTheme.dart';
 import 'package:strong_chat/services/FireStoreService.dart';
 import 'package:strong_chat/services/notification_service.dart';
-import 'dart:html' as html;
 
 import 'package:universal_html/html.dart';
 
@@ -30,20 +29,21 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    notificationHandler();
+    Future.microtask(() => notificationHandler(context));
   }
 
-  void notificationHandler() {
+
+  void notificationHandler(BuildContext context) {
     FirebaseMessaging.onMessage.listen((event) async {
       print(event.notification!.title);
-      LocalNotificationService().showNotification(event);
+      LocalNotificationService().showNotification(context,event);
       if (kIsWeb) {
         final title = event.notification!.title!;
         document.title = "$title";
       }
     });
     if (kIsWeb) {
-      String originalTitle = document.title;
+      String? originalTitle = document.title;
       document.addEventListener('visibilitychange', (event) {
         if (document.visibilityState == 'visible') {
           document.title = originalTitle;
@@ -51,8 +51,6 @@ class _MyAppState extends State<MyApp> {
       });
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {

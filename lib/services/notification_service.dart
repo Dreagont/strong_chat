@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,12 +9,13 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
-import 'package:universal_html/html.dart';
+import '../call/Videocall.dart';
 
 class Constant {
   static const String BASE_URL =
       'https://fcm.googleapis.com/v1/projects/flutter-final-app-bcd9d/messages:send';
 }
+
 
 class NotificationService {
   Future<String> getAccessToken() async {
@@ -33,7 +33,6 @@ class NotificationService {
     }
   }
 
-  /// Send Push Notification
   Future<bool> pushNotification({
     required String title,
     required String body,
@@ -70,7 +69,51 @@ class NotificationService {
       return false;
     }
   }
+
+  Future<bool> pushCallNotification({
+    required String title,
+    required String body,
+    required String token,
+    required String roomId,
+  }) async {
+    try {
+      String accessToken = await getAccessToken();
+      Map<String, dynamic> payload = {
+        'message': {
+          'token': token,
+          'notification': {
+            'title': title,
+            'body': body,
+          },
+          'data': {
+            'roomId': roomId,
+          },
+        },
+      };
+      String dataNotifications = jsonEncode(payload);
+      var response = await http.post(
+        Uri.parse(Constant.BASE_URL),
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $accessToken',
+        },
+        body: dataNotifications,
+      );
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        debugPrint("Push Notification Error: ${response.body}");
+        return false;
+      }
+    } catch (e) {
+      debugPrint("Error sending push notification: $e");
+      return false;
+    }
+  }
+
 }
+
+
 
 class LocalNotificationService {
   final firebaseFirestore = FirebaseFirestore.instance;
@@ -113,11 +156,11 @@ class LocalNotificationService {
 
   Future<void> logout() async {
     try {
-      await firebaseFirestore.collection('users').doc(_currentUser!.uid).update({
-        'notificationToken': "",
+      await firebaseFirestore.collection('Users').doc(_currentUser!.uid).update({
+        'notificationToken': '',
       });
       if (kIsWeb) {
-        await FirebaseMessaging.instance.deleteToken(); // Remove the token from localStorage
+        await FirebaseMessaging.instance.deleteToken();
         print("Web token cleared.");
       } else {
         await FirebaseMessaging.instance.deleteToken();
@@ -137,10 +180,12 @@ class LocalNotificationService {
     AndroidInitializationSettings('@mipmap/ic_launcher');
     const InitializationSettings initializationSettings =
     InitializationSettings(android: initializationSettingsAndroid);
-    await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+
+    await flutterLocalNotificationsPlugin.initialize(initializationSettings,);
   }
 
-  showNotification(RemoteMessage message) async {
+
+  showNotification(BuildContext context,RemoteMessage message) async {
     const AndroidNotificationDetails androidNotificationDetails =
     AndroidNotificationDetails(
       'channel_id',
@@ -158,5 +203,21 @@ class LocalNotificationService {
       message.notification!.body,
       notificationDetails,
     );
+    if (message.data.containsKey('roomId')) {
+      String roomId = message.data['roomId'];
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => VideoCallPage(
+            number: 2,
+            notificationToken: '',
+            CaleeName: '',
+            CallerName: '',
+            roomId: roomId,),
+        ),
+      );
+    } else {
+      debugPrint('No roomId found in the notification data');
+    }
   }
 }
