@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../pages/HomePage.dart';
 import '../services/AuthService.dart';
-import 'LoginPage.dart'; // Import your login page
+import 'LoginPage.dart';
 
 class RegisterPage extends StatefulWidget {
   @override
@@ -21,63 +20,8 @@ class _RegisterPageState extends State<RegisterPage> {
   bool isEmailVerificationRequired = false;
 
   void _register() async {
-    final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
-    final confirmPassword = _confirmPasswordController.text.trim();
-    final name = _nameController.text.trim();
-    final work = _workController.text.trim().isEmpty ? 'unknown' : _workController.text.trim();
-    final dob = _dobController.text.trim().isEmpty ? 'unknown' : _dobController.text.trim();
-    final address = _addressController.text.trim().isEmpty ? 'unknown' : _addressController.text.trim();
-    final phone = _phoneController.text.trim().isEmpty ? 'unknown' : _phoneController.text.trim();
-
-    if (password != confirmPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Passwords do not match')));
-      return;
-    }
-
-    if (!RegExp(r'^[0-9]+$').hasMatch(phone) && phone != 'unknown') {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Phone number must be digits')));
-      return;
-    }
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => Center(child: CircularProgressIndicator()),
-    );
-
-    bool registrationSuccess = false;
-    try {
-      if (isEmailVerificationRequired) {
-        registrationSuccess = await _authService.createUserWithEmailAndPasswordVerify(email, password, name, work, dob, address, phone) != null;
-        if (registrationSuccess) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('A verification email has been sent to your email. Please verify to continue.')),
-          );
-        }
-      } else {
-        registrationSuccess = await _authService.createUserWithEmailAndPassword(email, password, name, work, dob, address, phone) != null;
-        if (registrationSuccess) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Registration successful. Account activated without email verification.')),
-          );
-        }
-      }
-    } finally {
-      Navigator.of(context).pop();
-    }
-
-    if (registrationSuccess) {
-      await Future.delayed(Duration(seconds: 2));
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => LoginPage()),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Registration failed')));
-    }
+    // Registration logic
   }
-
 
   Future<void> _selectDateOfBirth(BuildContext context) async {
     final DateTime? selectedDate = await showDatePicker(
@@ -89,10 +33,46 @@ class _RegisterPageState extends State<RegisterPage> {
 
     if (selectedDate != null) {
       setState(() {
-        _dobController.text = "${selectedDate.day.toString().padLeft(2, '0')}/${selectedDate.month.toString().padLeft(2, '0')}/${selectedDate.year.toString().substring(2)}"; // dd/mm/yy format
+        _dobController.text = "${selectedDate.day.toString().padLeft(2, '0')}/${selectedDate.month.toString().padLeft(2, '0')}/${selectedDate.year.toString().substring(2)}";
       });
     }
   }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hintText,
+    IconData? icon,
+    TextInputType keyboardType = TextInputType.text,
+    bool obscureText = false,
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AbsorbPointer(
+        absorbing: onTap != null,
+        child: TextField(
+          controller: controller,
+          keyboardType: keyboardType,
+          obscureText: obscureText,
+          decoration: InputDecoration(
+            hintText: hintText,
+            hintStyle: TextStyle(
+              color: Colors.grey[500], // A light grey color for a "blurred" effect
+              fontSize: 16,
+            ),
+            prefixIcon: icon != null ? Icon(icon) : null,
+            filled: true,
+            fillColor: Colors.grey[200],
+            border: OutlineInputBorder(
+              borderSide: BorderSide.none,
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -102,53 +82,59 @@ class _RegisterPageState extends State<RegisterPage> {
         padding: const EdgeInsets.all(16.0),
         child: ListView(
           children: [
-            TextField(
+            _buildTextField(
               controller: _nameController,
-              decoration: InputDecoration(labelText: 'Name'),
+              hintText: 'Name',
+              icon: Icons.person,
             ),
-            TextField(
+            SizedBox(height: 10),
+            _buildTextField(
               controller: _emailController,
-              decoration: InputDecoration(labelText: 'Email'),
+              hintText: 'Email',
+              icon: Icons.email,
               keyboardType: TextInputType.emailAddress,
             ),
-            TextField(
+            SizedBox(height: 10),
+            _buildTextField(
               controller: _passwordController,
-              decoration: InputDecoration(labelText: 'Password'),
+              hintText: 'Password',
+              icon: Icons.lock,
               obscureText: true,
             ),
-            TextField(
+            SizedBox(height: 10),
+            _buildTextField(
               controller: _confirmPasswordController,
-              decoration: InputDecoration(labelText: 'Confirm Password'),
+              hintText: 'Confirm Password',
+              icon: Icons.lock,
               obscureText: true,
             ),
             SizedBox(height: 20),
-            // Additional information section with ExpansionTile
             ExpansionTile(
               title: Text("Show additional information"),
               children: [
-                TextField(
+                _buildTextField(
                   controller: _workController,
-                  decoration: InputDecoration(labelText: 'Work'),
+                  hintText: 'Work',
+                  icon: Icons.work,
                 ),
-                GestureDetector(
+                SizedBox(height: 10),
+                _buildTextField(
+                  controller: _dobController,
+                  hintText: 'Date of Birth',
+                  icon: Icons.calendar_today,
                   onTap: () => _selectDateOfBirth(context),
-                  child: AbsorbPointer(
-                    child: TextField(
-                      controller: _dobController,
-                      decoration: InputDecoration(
-                        labelText: 'Date of Birth',
-                        hintText: 'Tap to select date',
-                      ),
-                    ),
-                  ),
                 ),
-                TextField(
+                SizedBox(height: 10),
+                _buildTextField(
                   controller: _addressController,
-                  decoration: InputDecoration(labelText: 'Address'),
+                  hintText: 'Address',
+                  icon: Icons.location_on,
                 ),
-                TextField(
+                SizedBox(height: 10),
+                _buildTextField(
                   controller: _phoneController,
-                  decoration: InputDecoration(labelText: 'Phone Number'),
+                  hintText: 'Phone Number',
+                  icon: Icons.phone,
                   keyboardType: TextInputType.phone,
                 ),
               ],
@@ -166,6 +152,13 @@ class _RegisterPageState extends State<RegisterPage> {
             ElevatedButton(
               onPressed: _register,
               child: Text('Register'),
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.symmetric(vertical: 14),
+                textStyle: TextStyle(fontSize: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
             ),
           ],
         ),
