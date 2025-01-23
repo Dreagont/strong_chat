@@ -57,6 +57,9 @@ class _ChatTileState extends State<ChatTile> {
         displayMessage = '[Sent a file]';
         messageStyle = messageStyle.copyWith(fontStyle: FontStyle.italic);
         break;
+      case 'call':
+        displayMessage = '[A call]';
+        messageStyle = messageStyle.copyWith(fontStyle: FontStyle.italic);
       default:
         displayMessage = '[Unknown message type]';
         messageStyle = messageStyle.copyWith(fontStyle: FontStyle.italic);

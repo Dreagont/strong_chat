@@ -299,7 +299,7 @@ class _MessageBoxWithDataState extends State<MessageBoxWithData> {
           widget.data["message"] ?? '',
           style: TextStyle(
             fontWeight: FontWeight.normal,
-            color:  widget.themeProvider.themeMode == ThemeMode.dark
+            color: widget.themeProvider.themeMode == ThemeMode.dark
                 ? isMyMess ? Colors.white : Colors.white
                 : isMyMess ? Colors.white : Colors.black,
             fontSize: 16,
@@ -328,6 +328,30 @@ class _MessageBoxWithDataState extends State<MessageBoxWithData> {
               ),
             ],
           ),
+        );
+      case "call":
+        return Row(
+          children: [
+            Icon(
+              Icons.call,
+              color: widget.themeProvider.themeMode == ThemeMode.dark
+                  ? Colors.white
+                  : Colors.white,
+              size: 20,
+            ),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                widget.data["message"] ?? '',
+                style: TextStyle(
+                  color: widget.themeProvider.themeMode == ThemeMode.dark
+                      ? Colors.white
+                      : Colors.white,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ],
         );
       default:
         return Container();

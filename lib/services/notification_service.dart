@@ -197,10 +197,17 @@ class LocalNotificationService {
     );
     const NotificationDetails notificationDetails =
     NotificationDetails(android: androidNotificationDetails);
+
+    String body = message.notification?.body ?? '';
+    if (body.length > 120) {
+      body = body.substring(0, 120) + '...';
+    }
+
+
     await flutterLocalNotificationsPlugin.show(
       message.hashCode,
       message.notification!.title,
-      message.notification!.body,
+      body,
       notificationDetails,
     );
 

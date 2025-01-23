@@ -38,8 +38,6 @@ class _MyAppState extends State<MyApp> {
       if (event.data.containsKey('roomId')) {
         String roomId = event.data['roomId'];
         print("roomID: $roomId");
-
-        // Show a dialog when a roomId is present
         showDialog(
           context: navigatorKey.currentState!.context,
           builder: (BuildContext context) {

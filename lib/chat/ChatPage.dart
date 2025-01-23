@@ -355,23 +355,23 @@ class _ChatPageState extends State<ChatPage> {
             ),
             title: Row(
               children: [
-            Text(
-            isSentByMe ? 'You' : widget.friendData['name'],
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: ThemeProvider().themeMode == ThemeMode.dark
-                    ? Colors.white
-                    : Colors.black,
-              ),
-            ),
-            const SizedBox(width: 8),
-              Text(
-                formatTimestamp(message['timeStamp']),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
+                Text(
+                  isSentByMe ? 'You' : widget.friendData['name'],
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: ThemeProvider().themeMode == ThemeMode.dark
+                        ? Colors.white
+                        : Colors.black,
+                  ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                Text(
+                  formatTimestamp(message['timeStamp']),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                  ),
+                ),
               ],
             ),
             subtitle: Text(
@@ -405,33 +405,33 @@ class _ChatPageState extends State<ChatPage> {
         iconTheme: IconThemeData(color: Colors.white),
         title: Row(
           children: [
-          CircleAvatar(
-          radius: 16,
-          backgroundImage: NetworkImage(widget.friendData['avatar']),
-        ),
-        SizedBox(width: 8),
-          Flexible(
-            child: StreamBuilder<String?>(
-              stream: FireStoreService().getNicknameStream(userId, widget.friendData['id']),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return CircularProgressIndicator();
-                }
-                final nickname = snapshot.data ?? widget.friendData['name'];
-                final lastName = nickname.split(' ').last;
-                return Text(
-                  lastName,
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: themeProvider.themeMode == ThemeMode.dark
-                        ? Colors.white
-                        : Colors.white,
-                  ),
-                );
-              },
+            CircleAvatar(
+              radius: 16,
+              backgroundImage: NetworkImage(widget.friendData['avatar']),
             ),
-          ),
+            SizedBox(width: 8),
+            Flexible(
+              child: StreamBuilder<String?>(
+                stream: FireStoreService().getNicknameStream(userId, widget.friendData['id']),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return CircularProgressIndicator();
+                  }
+                  final nickname = snapshot.data ?? widget.friendData['name'];
+                  final lastName = nickname.split(' ').last;
+                  return Text(
+                    lastName,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: themeProvider.themeMode == ThemeMode.dark
+                          ? Colors.white
+                          : Colors.white,
+                    ),
+                  );
+                },
+              ),
+            ),
           ],
         ),
         backgroundColor: themeProvider.themeMode == ThemeMode.dark
@@ -446,7 +446,7 @@ class _ChatPageState extends State<ChatPage> {
                 userToken = snapshot.data;
               }
               return IconButton(
-                icon: const Icon(Icons.call_outlined),
+                icon: const Icon(Icons.videocam_outlined),
                 color: Colors.white,
                 onPressed: () async {
                   final name = await chatService.fetchUserName(userId);
@@ -467,24 +467,6 @@ class _ChatPageState extends State<ChatPage> {
                     debugPrint('Token is not available');
                   }
                 },
-              );
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.videocam_outlined),
-            color: Colors.white,
-            onPressed: () async {
-              final name = await chatService.fetchUserName(userId);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => VideoCallPage(
-                    number: 2,
-                    notificationToken: widget.friendData['notificationToken'],
-                    CaleeName: widget.friendData['name'],
-                    CallerName: name,
-                    roomId: '',),
-                ),
               );
             },
           ),
@@ -521,119 +503,119 @@ class _ChatPageState extends State<ChatPage> {
         ],
       ),
       body: Column(
-          children: [
+        children: [
           if (isSearching)
-      Container(
-    color: themeProvider.themeMode == ThemeMode.dark
-      ? Colors.grey[850]
-          : Colors.white,
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: TextField(
-          controller: searchController,
-          style: TextStyle(
-            color: themeProvider.themeMode == ThemeMode.dark
-                ? Colors.white
-                : Colors.black,
-          ),
-          decoration: InputDecoration(
-            hintText: 'Search messages...',
-            hintStyle: TextStyle(
+            Container(
               color: themeProvider.themeMode == ThemeMode.dark
-                  ? Colors.grey[400]
-                  : Colors.grey[600],
+                  ? Colors.grey[850]
+                  : Colors.white,
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: TextField(
+                controller: searchController,
+                style: TextStyle(
+                  color: themeProvider.themeMode == ThemeMode.dark
+                      ? Colors.white
+                      : Colors.black,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Search messages...',
+                  hintStyle: TextStyle(
+                    color: themeProvider.themeMode == ThemeMode.dark
+                        ? Colors.grey[400]
+                        : Colors.grey[600],
+                  ),
+                  fillColor: themeProvider.themeMode == ThemeMode.dark
+                      ? Colors.grey[700]
+                      : Colors.white,
+                  filled: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: BorderSide.none,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    color: themeProvider.themeMode == ThemeMode.dark
+                        ? Colors.grey[400]
+                        : Colors.grey[600],
+                  ),
+                ),
+                onChanged: performSearch,
+              ),
             ),
-            fillColor: themeProvider.themeMode == ThemeMode.dark
-                ? Colors.grey[700]
-                : Colors.white,
-            filled: true,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(20),
-              borderSide: BorderSide.none,
-            ),
-            prefixIcon: Icon(
-              Icons.search,
-              color: themeProvider.themeMode == ThemeMode.dark
-                  ? Colors.grey[400]
-                  : Colors.grey[600],
-            ),
+          Expanded(
+            child: searchResults.isNotEmpty
+                ? buildSearchResults()
+                : MessageList(
+                displayedMessages: displayedMessages,
+                allMessages: allMessages,
+                scrollController: scrollController,
+                isLoadingMore: isLoadingMore,
+                formatTimestamp: formatTimestamp,
+                themeProvider: themeProvider),
           ),
-          onChanged: performSearch,
-        ),
-      ),
-      Expanded(
-        child: searchResults.isNotEmpty
-            ? buildSearchResults()
-            : MessageList(
-            displayedMessages: displayedMessages,
-            allMessages: allMessages,
-            scrollController: scrollController,
-            isLoadingMore: isLoadingMore,
-            formatTimestamp: formatTimestamp,
-            themeProvider: themeProvider),
-      ),
-      StreamBuilder<bool>(
-        stream:
-        chatService.isBlockedHimStream(userId, widget.friendData['id']),
-        builder: (context, snapshot) {
-          bool amIBlockedThisUser = snapshot.data ?? false;
+          StreamBuilder<bool>(
+            stream:
+            chatService.isBlockedHimStream(userId, widget.friendData['id']),
+            builder: (context, snapshot) {
+              bool amIBlockedThisUser = snapshot.data ?? false;
 
-          if (amIBlockedThisUser) {
-            return Container(
-              padding: const EdgeInsets.all(16.0),
-              color: Colors.yellow[100],
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "You have blocked this user",
+              if (amIBlockedThisUser) {
+                return Container(
+                  padding: const EdgeInsets.all(16.0),
+                  color: Colors.yellow[100],
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "You have blocked this user",
+                        style: TextStyle(
+                          color: Colors.black87,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          chatService.blockActionUserForFriend(
+                              userId, widget.friendData['id']);
+                        },
+                        child: Text("Unblock"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              if (!isBlocked) {
+                return UserInput(
+                  messController: messController,
+                  focusNode: focusNode,
+                  friendId: widget.friendData['id'],
+                  onMessageSent: goToBot,
+                  sendTextMessage: sendTextMessage,
+                  sendImageMessage: messageSender.sendImageMessage,
+                  sendVideoMessage: messageSender.sendVideoMessage,
+                  sendFileMessage: messageSender.sendFileMessage,
+                );
+              } else {
+                return Container(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    "You have been blocked by your friend and cannot send messages.",
                     style: TextStyle(
-                      color: Colors.black87,
+                      color: Colors.red[900],
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  ElevatedButton(
-                    onPressed: () {
-                      chatService.blockActionUserForFriend(
-                          userId, widget.friendData['id']);
-                    },
-                    child: Text("Unblock"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          if (!isBlocked) {
-            return UserInput(
-              messController: messController,
-              focusNode: focusNode,
-              friendId: widget.friendData['id'],
-              onMessageSent: goToBot,
-              sendTextMessage: sendTextMessage,
-              sendImageMessage: messageSender.sendImageMessage,
-              sendVideoMessage: messageSender.sendVideoMessage,
-              sendFileMessage: messageSender.sendFileMessage,
-            );
-          } else {
-            return Container(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                "You have been blocked by your friend and cannot send messages.",
-                style: TextStyle(
-                  color: Colors.red[900],
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            );
-          }
-        },
+                );
+              }
+            },
+          ),
+        ],
       ),
-      ],
-    ),
     );
   }
 

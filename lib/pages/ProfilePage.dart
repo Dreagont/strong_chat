@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:strong_chat/services/AuthService.dart';
@@ -101,14 +102,24 @@ class _ProfilePageState extends State<ProfilePage> {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setDialogState) {
             return AlertDialog(
-              title: Text('Change Password'),
+              title: Row(
+                children: [
+                  Icon(Icons.lock_reset, color: Theme.of(context).primaryColor),
+                  SizedBox(width: 10),
+                  Text('Change Password'),
+                ],
+              ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
                     controller: oldPasswordController,
+                    inputFormatters: [
+                      LengthLimitingTextInputFormatter(20),
+                    ],
                     decoration: InputDecoration(
                       labelText: 'Old Password',
+                      prefixIcon: Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
                         icon: Icon(
                           isOldPasswordVisible
@@ -126,8 +137,12 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   TextField(
                     controller: newPasswordController,
+                    inputFormatters: [
+                      LengthLimitingTextInputFormatter(20),
+                    ],
                     decoration: InputDecoration(
                       labelText: 'New Password',
+                      prefixIcon: Icon(Icons.lock_open),
                       suffixIcon: IconButton(
                         icon: Icon(
                           isNewPasswordVisible
@@ -145,18 +160,23 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   TextField(
                     controller: confirmPasswordController,
+                    inputFormatters: [
+                      LengthLimitingTextInputFormatter(20),
+                    ],
                     decoration: InputDecoration(
                       labelText: 'Confirm Password',
+                      prefixIcon: Icon(Icons.lock),
+                      helperText: 'Password must be 8-20 characters',
                       suffixIcon: IconButton(
                         icon: Icon(
                           isConfirmPasswordVisible
                               ? Icons.visibility
                               : Icons.visibility_off,
                         ),
+
                         onPressed: () {
                           setDialogState(() {
-                            isConfirmPasswordVisible =
-                            !isConfirmPasswordVisible;
+                            isConfirmPasswordVisible = !isConfirmPasswordVisible;
                           });
                         },
                       ),
@@ -172,6 +192,13 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 TextButton(
                   onPressed: () {
+                    if (newPasswordController.text.length < 8) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Password must be at least 8 characters')),
+                      );
+                      return;
+                    }
+
                     if (newPasswordController.text ==
                         confirmPasswordController.text) {
                       Navigator.of(context).pop(true);
@@ -243,17 +270,30 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _editName() async {
-    final TextEditingController nameController =
-    TextEditingController(text: _userName);
+    final TextEditingController nameController = TextEditingController(
+      text: _userName,
+    );
 
     final newName = await showDialog<String>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Edit Name'),
+          title: Row(
+            children: [
+              Icon(Icons.person_rounded, color: Theme.of(context).primaryColor),
+              SizedBox(width: 10),
+              Text('Edit Name'),
+            ],
+          ),
           content: TextField(
             controller: nameController,
-            decoration: InputDecoration(labelText: 'Enter new name'),
+            maxLength: 30,
+            decoration: InputDecoration(
+              labelText: 'Enter new name',
+              counterText: '',
+              prefixIcon: Icon(Icons.text_fields),
+              helperText: 'Name must be between 2-30 characters',
+            ),
           ),
           actions: [
             TextButton(
@@ -261,8 +301,18 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Text('Cancel'),
             ),
             TextButton(
-              onPressed: () =>
-                  Navigator.of(context).pop(nameController.text.trim()),
+              onPressed: () {
+                final trimmedName = nameController.text.trim();
+                if (trimmedName.length >= 2) {
+                  Navigator.of(context).pop(trimmedName);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Name must be at least 2 characters long'),
+                    ),
+                  );
+                }
+              },
               child: Text('Confirm'),
             ),
           ],
@@ -271,11 +321,27 @@ class _ProfilePageState extends State<ProfilePage> {
     );
 
     if (newName != null && newName.isNotEmpty && newName != _userName) {
-      setState(() {
-        _userName = newName;
-      });
-      await _fireStoreService.updateUserName(
-          _authService.getCurrentUserId(), newName);
+      showLoadingDialog(context);
+      try {
+        await _fireStoreService.updateUserName(
+            _authService.getCurrentUserId(),
+            newName
+        );
+
+        setState(() {
+          _userName = newName;
+        });
+
+        Navigator.of(context).pop(); // Dismiss loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Name updated successfully')),
+        );
+      } catch (e) {
+        Navigator.of(context).pop(); // Dismiss loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error updating name: ${e.toString()}')),
+        );
+      }
     }
   }
 
@@ -452,7 +518,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     Text(
                       title,
                       style: TextStyle(
-                          fontSize: 22, fontWeight: FontWeight.bold),
+                          fontSize: 22),
                     ),
                   ],
                 ),
@@ -492,16 +558,24 @@ class _ProfilePageState extends State<ProfilePage> {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setDialogState) {
             return AlertDialog(
-              title: Text('Edit Information'),
+              title: Row(
+                children: [
+                  Icon(Icons.edit, color: Theme.of(context).primaryColor),
+                  SizedBox(width: 10),
+                  Text('Edit Information'),
+                ],
+              ),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     TextField(
                       controller: workController,
+                      maxLength: 50,
                       decoration: InputDecoration(
                         labelText: 'Work',
                         prefixIcon: Icon(Icons.work),
+                        counterText: '',
                       ),
                     ),
                     SizedBox(height: 16),
@@ -521,12 +595,15 @@ class _ProfilePageState extends State<ProfilePage> {
                       },
                       child: AbsorbPointer(
                         child: TextField(
+                          controller: TextEditingController(
+                            text: selectedDate != null
+                                ? DateFormat('dd/MM/yyyy').format(selectedDate!)
+                                : '',
+                          ),
                           decoration: InputDecoration(
                             labelText: 'Date of Birth',
                             prefixIcon: Icon(Icons.calendar_today),
-                            hintText: selectedDate != null
-                                ? DateFormat('dd/MM/yy').format(selectedDate!)
-                                : 'Select date',
+                            hintText: 'Select your date of birth',
                           ),
                         ),
                       ),
@@ -534,15 +611,21 @@ class _ProfilePageState extends State<ProfilePage> {
                     SizedBox(height: 16),
                     TextField(
                       controller: addressController,
+                      maxLength: 100,
                       decoration: InputDecoration(
                         labelText: 'Address',
                         prefixIcon: Icon(Icons.location_on),
+                        counterText: '',
                       ),
                     ),
                     SizedBox(height: 16),
                     TextField(
                       controller: phoneController,
                       keyboardType: TextInputType.phone,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(15),
+                      ],
                       decoration: InputDecoration(
                         labelText: 'Phone',
                         prefixIcon: Icon(Icons.phone),
@@ -558,6 +641,12 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 TextButton(
                   onPressed: () {
+                    if (phoneController.text.length < 8) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Phone number must be 8-15 digits.')),
+                      );
+                      return;
+                    }
                     final newInfo = {
                       'work': workController.text.trim(),
                       'dob': selectedDate != null
@@ -592,13 +681,12 @@ class _ProfilePageState extends State<ProfilePage> {
           _phone = result['phone'] ?? _phone;
         });
 
-        Navigator.of(context).pop(); // Dismiss loading dialog
+        Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Information updated successfully')),
         );
       } catch (e) {
-        print(e);
-        Navigator.of(context).pop(); // Dismiss loading dialog
+        Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error updating information: ${e.toString()}')),
         );

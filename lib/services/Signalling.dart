@@ -1,9 +1,9 @@
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 typedef void StreamStateCallback(MediaStream stream);
 typedef void StreamRemoveCallback();
+typedef void HangUpCallback();
 
 class Signaling {
   Map<String, dynamic> configuration = {
@@ -24,11 +24,12 @@ class Signaling {
   String? currentRoomText;
   StreamStateCallback? onAddRemoteStream;
   StreamRemoveCallback? onRemoveRemoteStream;
+  HangUpCallback? onHangUp;
 
   Future<void> startCamera(RTCVideoRenderer localVideo) async {
     if (localStream != null) {
       localStream?.getVideoTracks().forEach((track) {
-        track.enabled = true; // Enable the video track
+        track.enabled = true;
       });
       localVideo.srcObject = localStream;
     }
@@ -37,7 +38,7 @@ class Signaling {
   Future<void> stopCamera() async {
     if (localStream != null) {
       localStream?.getVideoTracks().forEach((track) {
-        track.enabled = false; // Disable the video track
+        track.enabled = false;
       });
     }
   }
@@ -45,7 +46,7 @@ class Signaling {
   Future<void> startMic() async {
     if (localStream != null) {
       localStream?.getAudioTracks().forEach((track) {
-        track.enabled = true; // Enable the audio track
+        track.enabled = true;
       });
     }
   }
@@ -53,7 +54,7 @@ class Signaling {
   Future<void> stopMic() async {
     if (localStream != null) {
       localStream?.getAudioTracks().forEach((track) {
-        track.enabled = false; // Disable the audio track
+        track.enabled = false;
       });
     }
   }
@@ -89,7 +90,6 @@ class Signaling {
 
       remoteStream = await createLocalMediaStream('remoteStream');
       peerConnection?.onTrack = (RTCTrackEvent event) {
-        print("onTrack called with ${event.streams.length} streams");
         if (event.streams.isNotEmpty) {
           remoteRenderer.srcObject = event.streams[0];
           remoteStream = event.streams[0];
@@ -126,6 +126,15 @@ class Signaling {
         });
       });
 
+      roomRef.snapshots().listen((snapshot) {
+        if (snapshot.data() != null) {
+          Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
+          if (data['hangUp'] == true) {
+            onHangUp?.call();
+          }
+        }
+      });
+
       return roomId!;
     } catch (e) {
       print('Error creating room: $e');
@@ -156,7 +165,6 @@ class Signaling {
 
         remoteStream = await createLocalMediaStream('remoteStream');
         peerConnection?.onTrack = (RTCTrackEvent event) {
-          print("onTrack called with ${event.streams.length} streams");
           if (event.streams.isNotEmpty) {
             remoteVideo.srcObject = event.streams[0];
             remoteStream = event.streams[0];
@@ -192,6 +200,15 @@ class Signaling {
             }
           });
         });
+
+        roomRef.snapshots().listen((snapshot) {
+          if (snapshot.data() != null) {
+            Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
+            if (data['hangUp'] == true) {
+              onHangUp?.call();
+            }
+          }
+        });
       }
     } catch (e) {
       print('Error joining room: $e');
@@ -200,9 +217,7 @@ class Signaling {
   }
 
   Future<void> openUserMedia(
-      RTCVideoRenderer localVideo,
-      RTCVideoRenderer remoteVideo,
-      ) async {
+      RTCVideoRenderer localVideo, RTCVideoRenderer remoteVideo) async {
     try {
       var stream = await navigator.mediaDevices.getUserMedia({
         'video': true,
@@ -231,6 +246,9 @@ class Signaling {
       if (roomId != null) {
         FirebaseFirestore db = FirebaseFirestore.instance;
         var roomRef = db.collection('rooms').doc(roomId);
+
+        await roomRef.update({'hangUp': true});
+
         var calleeCandidates = await roomRef.collection('calleeCandidates').get();
         var callerCandidates = await roomRef.collection('callerCandidates').get();
 
