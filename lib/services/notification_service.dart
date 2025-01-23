@@ -185,7 +185,7 @@ class LocalNotificationService {
   }
 
 
-  showNotification(BuildContext context,RemoteMessage message) async {
+  showNotification(RemoteMessage message) async {
     const AndroidNotificationDetails androidNotificationDetails =
     AndroidNotificationDetails(
       'channel_id',
@@ -203,21 +203,6 @@ class LocalNotificationService {
       message.notification!.body,
       notificationDetails,
     );
-    if (message.data.containsKey('roomId')) {
-      String roomId = message.data['roomId'];
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => VideoCallPage(
-            number: 2,
-            notificationToken: '',
-            CaleeName: '',
-            CallerName: '',
-            roomId: roomId,),
-        ),
-      );
-    } else {
-      debugPrint('No roomId found in the notification data');
-    }
+
   }
 }

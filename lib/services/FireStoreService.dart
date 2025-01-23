@@ -183,7 +183,7 @@ class FireStoreService {
 
   Future<String> fetchUserName(String userId) async {
     final DocumentSnapshot userSnapshot =
-        await fireStore.collection("Users").doc(userId).get();
+    await fireStore.collection("Users").doc(userId).get();
     return userSnapshot.get('name') ?? 'User';
   }
 
@@ -290,6 +290,14 @@ class FireStoreService {
         .snapshots()
         .map((doc) => doc.data());
   }
+  Stream<String?> getUserTokenStream(String userId) {
+    return fireStore
+        .collection('Users') // Ensure the collection name matches exactly
+        .doc(userId)
+        .snapshots()
+        .map((doc) => doc.data()?['notificationToken'] as String?);
+  }
+
 
   Stream<QuerySnapshot> getMessage(String userId, String friendId) {
     List<String> ids = [userId, friendId];
@@ -306,7 +314,7 @@ class FireStoreService {
   Future<Map<String, dynamic>?> getUserInfo(String userId) async {
     try {
       DocumentSnapshot userDoc =
-          await fireStore.collection("Users").doc(userId).get();
+      await fireStore.collection("Users").doc(userId).get();
       if (userDoc.exists) {
         return userDoc.data() as Map<String, dynamic>?;
       } else {

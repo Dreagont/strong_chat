@@ -70,6 +70,12 @@ class _VideoCallPageState extends State<VideoCallPage> {
             roomId: roomId!
         );
       }
+      if(widget.number == 2){
+        signaling.joinRoom(
+          widget.roomId,
+          _remoteRenderer,
+        );
+      }
 
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -164,17 +170,6 @@ class _VideoCallPageState extends State<VideoCallPage> {
                       ),
                     ),
                   ),
-                ),
-                SizedBox(width: 10),
-                IconButton(
-                  onPressed: () {
-                    signaling.joinRoom(
-                      textEditingController.text.trim(),
-                      _remoteRenderer,
-                    );
-                  },
-                  icon: Icon(Icons.meeting_room, color: Colors.white),
-                  iconSize: 32,
                 ),
               ],
             ),

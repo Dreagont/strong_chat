@@ -147,13 +147,13 @@ class _ChatPageState extends State<ChatPage> {
       });
     }
     messageSender = MessageSenderService(
-      chatService: chatService,
-      authService: authService,
-      storageService: storageService,
-      friendId: widget.friendData['id'],
-      onMessageAdded: _handleMessageAdded,
-      onMessageSent: goToBot,
-      context: context
+        chatService: chatService,
+        authService: authService,
+        storageService: storageService,
+        friendId: widget.friendData['id'],
+        onMessageAdded: _handleMessageAdded,
+        onMessageSent: goToBot,
+        context: context
     );
 
     scrollController.addListener(_scrollListener);
@@ -189,20 +189,20 @@ class _ChatPageState extends State<ChatPage> {
         setState(() {
           var newMessages = snapshot.docs
               .map((doc) {
-                Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-                return {
-                  'id': doc.id,
-                  'message': data['message'],
-                  'messType': data['messType'],
-                  'timeStamp': data['timeStamp'],
-                  'senderId': data['senderId'],
-                  'fileName': data['fileName'],
-                  'isNoti_isDeliver': data['isNoti_isDeliver'],
-                  'isRead': data['isRead'],
-                  'likes': List<String>.from(data['likes'] ?? []),
-                  'deletedBy': List<String>.from(data['deletedBy'] ?? []),
-                };
-              })
+            Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+            return {
+              'id': doc.id,
+              'message': data['message'],
+              'messType': data['messType'],
+              'timeStamp': data['timeStamp'],
+              'senderId': data['senderId'],
+              'fileName': data['fileName'],
+              'isNoti_isDeliver': data['isNoti_isDeliver'],
+              'isRead': data['isRead'],
+              'likes': List<String>.from(data['likes'] ?? []),
+              'deletedBy': List<String>.from(data['deletedBy'] ?? []),
+            };
+          })
               .where((msg) => !msg['deletedBy'].contains(userId))
               .toList();
 
@@ -213,12 +213,12 @@ class _ChatPageState extends State<ChatPage> {
 
           mediaItems = newMessages
               .where((msg) =>
-                  msg['messType'] == 'image' || msg['messType'] == 'video')
+          msg['messType'] == 'image' || msg['messType'] == 'video')
               .map((msg) => MediaItem(
-                    url: msg['message'] as String,
-                    isVideo: msg['messType'] == 'video',
-                    fileName: msg['fileName'] ?? 'unname',
-                  ))
+            url: msg['message'] as String,
+            isVideo: msg['messType'] == 'video',
+            fileName: msg['fileName'] ?? 'unname',
+          ))
               .toList()
               .reversed
               .toList();
@@ -237,7 +237,7 @@ class _ChatPageState extends State<ChatPage> {
 
             if (currentDisplayCount > messagesPerPage) {
               var lastVisibleIndex = allMessages.indexWhere(
-                  (msg) => msg['timeStamp'] == lastVisibleTimestamp);
+                      (msg) => msg['timeStamp'] == lastVisibleTimestamp);
               if (lastVisibleIndex != -1) {
                 displayedMessages = allMessages
                     .sublist(0, min(lastVisibleIndex + 1, allMessages.length))
@@ -296,7 +296,7 @@ class _ChatPageState extends State<ChatPage> {
   void _handleMessageAdded(Map<String, dynamic> message) {
     setState(() {
       bool messageExists = displayedMessages.any((msg) =>
-          msg['timeStamp'] == message['timeStamp'] &&
+      msg['timeStamp'] == message['timeStamp'] &&
           msg['message'] == message['message']);
 
       if (!messageExists) {
@@ -355,23 +355,23 @@ class _ChatPageState extends State<ChatPage> {
             ),
             title: Row(
               children: [
-                Text(
-                  isSentByMe ? 'You' : widget.friendData['name'],
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: ThemeProvider().themeMode == ThemeMode.dark
-                        ? Colors.white
-                        : Colors.black,
-                  ),
+            Text(
+            isSentByMe ? 'You' : widget.friendData['name'],
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: ThemeProvider().themeMode == ThemeMode.dark
+                    ? Colors.white
+                    : Colors.black,
+              ),
+            ),
+            const SizedBox(width: 8),
+              Text(
+                formatTimestamp(message['timeStamp']),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey,
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  formatTimestamp(message['timeStamp']),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
-                ),
+              ),
               ],
             ),
             subtitle: Text(
@@ -389,6 +389,8 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
+  String? userToken;
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
@@ -403,54 +405,68 @@ class _ChatPageState extends State<ChatPage> {
         iconTheme: IconThemeData(color: Colors.white),
         title: Row(
           children: [
-            CircleAvatar(
-              radius: 16,
-              backgroundImage: NetworkImage(widget.friendData['avatar']),
+          CircleAvatar(
+          radius: 16,
+          backgroundImage: NetworkImage(widget.friendData['avatar']),
+        ),
+        SizedBox(width: 8),
+          Flexible(
+            child: StreamBuilder<String?>(
+              stream: FireStoreService().getNicknameStream(userId, widget.friendData['id']),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return CircularProgressIndicator();
+                }
+                final nickname = snapshot.data ?? widget.friendData['name'];
+                final lastName = nickname.split(' ').last;
+                return Text(
+                  lastName,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: themeProvider.themeMode == ThemeMode.dark
+                        ? Colors.white
+                        : Colors.white,
+                  ),
+                );
+              },
             ),
-            SizedBox(width: 8),
-            Flexible(
-              child: StreamBuilder<String?>(
-                stream: FireStoreService().getNicknameStream(userId, widget.friendData['id']),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return CircularProgressIndicator();
-                  }
-                  final nickname = snapshot.data ?? widget.friendData['name'];
-                  final lastName = nickname.split(' ').last;
-                  return Text(
-                    lastName,
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: themeProvider.themeMode == ThemeMode.dark
-                          ? Colors.white
-                          : Colors.white,
-                    ),
-                  );
-                },
-              ),
-            ),
+          ),
           ],
         ),
         backgroundColor: themeProvider.themeMode == ThemeMode.dark
             ? Colors.grey[850]
             : Colors.blue,
         actions: [
-          IconButton(
-            icon: Icon(Icons.call_outlined),
-            color: Colors.white,
-            onPressed: () async {
-              final name = await chatService.fetchUserName(userId);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => VideoCallPage(
-                    number: 1,
-                    notificationToken: widget.friendData['notificationToken'],
-                    CaleeName: widget.friendData['name'],
-                    CallerName: name,
-                    roomId: '',),
-                ),
+          StreamBuilder<String?>(
+            stream: chatService.getUserTokenStream(widget.friendData['id']),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.active &&
+                  snapshot.hasData) {
+                userToken = snapshot.data;
+              }
+              return IconButton(
+                icon: const Icon(Icons.call_outlined),
+                color: Colors.white,
+                onPressed: () async {
+                  final name = await chatService.fetchUserName(userId);
+                  if (userToken != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => VideoCallPage(
+                          number: 1,
+                          notificationToken: userToken!,
+                          CaleeName: widget.friendData['name'],
+                          CallerName: name,
+                          roomId: '',
+                        ),
+                      ),
+                    );
+                  } else {
+                    debugPrint('Token is not available');
+                  }
+                },
               );
             },
           ),
@@ -505,119 +521,119 @@ class _ChatPageState extends State<ChatPage> {
         ],
       ),
       body: Column(
-        children: [
+          children: [
           if (isSearching)
-            Container(
-              color: themeProvider.themeMode == ThemeMode.dark
-                  ? Colors.grey[850]
-                  : Colors.white,
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: TextField(
-                controller: searchController,
-                style: TextStyle(
-                  color: themeProvider.themeMode == ThemeMode.dark
-                      ? Colors.white
-                      : Colors.black,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'Search messages...',
-                  hintStyle: TextStyle(
-                    color: themeProvider.themeMode == ThemeMode.dark
-                        ? Colors.grey[400]
-                        : Colors.grey[600],
-                  ),
-                  fillColor: themeProvider.themeMode == ThemeMode.dark
-                      ? Colors.grey[700]
-                      : Colors.white,
-                  filled: true,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20),
-                    borderSide: BorderSide.none,
-                  ),
-                  prefixIcon: Icon(
-                    Icons.search,
-                    color: themeProvider.themeMode == ThemeMode.dark
-                        ? Colors.grey[400]
-                        : Colors.grey[600],
-                  ),
-                ),
-                onChanged: performSearch,
-              ),
-            ),
-          Expanded(
-            child: searchResults.isNotEmpty
-                ? buildSearchResults()
-                : MessageList(
-                displayedMessages: displayedMessages,
-                allMessages: allMessages,
-                scrollController: scrollController,
-                isLoadingMore: isLoadingMore,
-                formatTimestamp: formatTimestamp,
-                themeProvider: themeProvider),
+      Container(
+    color: themeProvider.themeMode == ThemeMode.dark
+      ? Colors.grey[850]
+          : Colors.white,
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: TextField(
+          controller: searchController,
+          style: TextStyle(
+            color: themeProvider.themeMode == ThemeMode.dark
+                ? Colors.white
+                : Colors.black,
           ),
-          StreamBuilder<bool>(
-            stream:
-                chatService.isBlockedHimStream(userId, widget.friendData['id']),
-            builder: (context, snapshot) {
-              bool amIBlockedThisUser = snapshot.data ?? false;
+          decoration: InputDecoration(
+            hintText: 'Search messages...',
+            hintStyle: TextStyle(
+              color: themeProvider.themeMode == ThemeMode.dark
+                  ? Colors.grey[400]
+                  : Colors.grey[600],
+            ),
+            fillColor: themeProvider.themeMode == ThemeMode.dark
+                ? Colors.grey[700]
+                : Colors.white,
+            filled: true,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(20),
+              borderSide: BorderSide.none,
+            ),
+            prefixIcon: Icon(
+              Icons.search,
+              color: themeProvider.themeMode == ThemeMode.dark
+                  ? Colors.grey[400]
+                  : Colors.grey[600],
+            ),
+          ),
+          onChanged: performSearch,
+        ),
+      ),
+      Expanded(
+        child: searchResults.isNotEmpty
+            ? buildSearchResults()
+            : MessageList(
+            displayedMessages: displayedMessages,
+            allMessages: allMessages,
+            scrollController: scrollController,
+            isLoadingMore: isLoadingMore,
+            formatTimestamp: formatTimestamp,
+            themeProvider: themeProvider),
+      ),
+      StreamBuilder<bool>(
+        stream:
+        chatService.isBlockedHimStream(userId, widget.friendData['id']),
+        builder: (context, snapshot) {
+          bool amIBlockedThisUser = snapshot.data ?? false;
 
-              if (amIBlockedThisUser) {
-                return Container(
-                  padding: const EdgeInsets.all(16.0),
-                  color: Colors.yellow[100],
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "You have blocked this user",
-                        style: TextStyle(
-                          color: Colors.black87,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          chatService.blockActionUserForFriend(
-                              userId, widget.friendData['id']);
-                        },
-                        child: Text("Unblock"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              if (!isBlocked) {
-                return UserInput(
-                  messController: messController,
-                  focusNode: focusNode,
-                  friendId: widget.friendData['id'],
-                  onMessageSent: goToBot,
-                  sendTextMessage: sendTextMessage,
-                  sendImageMessage: messageSender.sendImageMessage,
-                  sendVideoMessage: messageSender.sendVideoMessage,
-                  sendFileMessage: messageSender.sendFileMessage,
-                );
-              } else {
-                return Container(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Text(
-                    "You have been blocked by your friend and cannot send messages.",
+          if (amIBlockedThisUser) {
+            return Container(
+              padding: const EdgeInsets.all(16.0),
+              color: Colors.yellow[100],
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "You have blocked this user",
                     style: TextStyle(
-                      color: Colors.red[900],
+                      color: Colors.black87,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                );
-              }
-            },
-          ),
-        ],
+                  ElevatedButton(
+                    onPressed: () {
+                      chatService.blockActionUserForFriend(
+                          userId, widget.friendData['id']);
+                    },
+                    child: Text("Unblock"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          if (!isBlocked) {
+            return UserInput(
+              messController: messController,
+              focusNode: focusNode,
+              friendId: widget.friendData['id'],
+              onMessageSent: goToBot,
+              sendTextMessage: sendTextMessage,
+              sendImageMessage: messageSender.sendImageMessage,
+              sendVideoMessage: messageSender.sendVideoMessage,
+              sendFileMessage: messageSender.sendFileMessage,
+            );
+          } else {
+            return Container(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                "You have been blocked by your friend and cannot send messages.",
+                style: TextStyle(
+                  color: Colors.red[900],
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            );
+          }
+        },
       ),
+      ],
+    ),
     );
   }
 
@@ -642,7 +658,7 @@ class _ChatPageState extends State<ChatPage> {
             padding: EdgeInsets.all(16),
             alignment: Alignment.center,
             child:
-                isLoadingMore ? CircularProgressIndicator() : SizedBox.shrink(),
+            isLoadingMore ? CircularProgressIndicator() : SizedBox.shrink(),
           );
         }
 
@@ -653,9 +669,9 @@ class _ChatPageState extends State<ChatPage> {
         if (!showTimestamp && index < displayedMessages.length - 1) {
           Timestamp nextTimestamp = displayedMessages[index + 1]["timeStamp"];
           showTimestamp = currentTimestamp
-                  .toDate()
-                  .difference(nextTimestamp.toDate())
-                  .inHours >
+              .toDate()
+              .difference(nextTimestamp.toDate())
+              .inHours >
               3;
         }
 
@@ -673,8 +689,8 @@ class _ChatPageState extends State<ChatPage> {
         return Column(
           children: [
             MessageBoxWithData(data: data, showTimestamp: showTimestamp, formatTimestamp: formatTimestamp,
-                themeProvider: themeProvider,authService: authService,chatService: chatService, mediaItems: mediaItems,
-            friendData: widget.friendData,),
+              themeProvider: themeProvider,authService: authService,chatService: chatService, mediaItems: mediaItems,
+              friendData: widget.friendData,),
             if (index == 0 && data['senderId'] == userId) ...[
               Padding(
                 padding: const EdgeInsets.only(right: 25.0),
