@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:strong_chat/services/AuthService.dart';
 import 'package:strong_chat/services/notification_service.dart';
 import '../services/Signalling.dart';
 
@@ -42,11 +44,13 @@ class _VideoCallPageState extends State<VideoCallPage> {
 
   Duration _elapsedTime = Duration.zero;
   Timer? _timer;
+  String? friendAvatar;
 
   @override
   void initState() {
     super.initState();
     _initializeMediaAndHandleRoom();
+    _fetchFriendAvatar();
   }
 
   Future<void> _initializeMediaAndHandleRoom() async {
@@ -77,12 +81,8 @@ class _VideoCallPageState extends State<VideoCallPage> {
         toggleCamera();
       }
 
-      signaling.onHangUp = () {
-        _endCall(false);
-      };
-
       if (widget.number == 1) {
-        roomId = await signaling.createRoom(_remoteRenderer);
+        roomId = await signaling.createRoom(_remoteRenderer,_localRenderer, context,widget.callerId,widget.calleeId);
         NotificationService().pushCallNotification(
           title: widget.isVoice ? 'Voice Call' : "Video Call",
           body: "From ${widget.CallerName}",
@@ -94,7 +94,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
         );
       } else if (widget.number == 2) {
         roomId = widget.roomId;
-        signaling.joinRoom(widget.roomId, _remoteRenderer);
+        signaling.joinRoom(widget.roomId, _remoteRenderer, _localRenderer, context,widget.callerId,widget.calleeId);
       }
       signaling.onCallDurationUpdate = (duration) {
         setState(() {
@@ -154,8 +154,29 @@ class _VideoCallPageState extends State<VideoCallPage> {
 
   void _endCall(bool isMine) {
     _timer?.cancel();
-    signaling.hangUp(_localRenderer, widget.callerId, widget.calleeId, isMine);
-    Navigator.pop(context);
+    signaling.hangUp(_localRenderer, widget.callerId, widget.calleeId, isMine, context, true, widget.roomId, "VideoCall");
+  }
+
+  Future<void> _fetchFriendAvatar() async {
+    try {
+      String userIdToFetch = widget.callerId == AuthService().getCurrentUserId()
+          ? widget.calleeId
+          : widget.callerId;
+
+      print('fetched id : ${widget.CallerName}');
+
+      final DocumentSnapshot userSnapshot =
+      await FirebaseFirestore.instance.collection("Users").doc(userIdToFetch).get();
+
+      setState(() {
+        friendAvatar = userSnapshot.get('avatar') ?? 'default_avatar.png';
+      });
+    } catch (e) {
+      print('Error fetching avatar: $e');
+      setState(() {
+        friendAvatar = 'default_avatar.png';
+      });
+    }
   }
 
   @override
@@ -173,13 +194,24 @@ class _VideoCallPageState extends State<VideoCallPage> {
             ),
             child: Stack(
               children: [
-                Positioned.fill(
-                  child: RTCVideoView(
-                    isRemoteConnected ? _remoteRenderer : _localRenderer,
-                    objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
-                    mirror: !isRemoteConnected,
+                if (widget.isVoice && friendAvatar != null)
+                  Positioned.fill(
+                    child: Center(
+                      child: CircleAvatar(
+                        radius: 100,
+                        backgroundImage: NetworkImage(friendAvatar!),
+                        backgroundColor: Colors.grey[300],
+                      ),
+                    ),
+                  )
+                else
+                  Positioned.fill(
+                    child: RTCVideoView(
+                      isRemoteConnected ? _remoteRenderer : _localRenderer,
+                      objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                      mirror: !isRemoteConnected,
+                    ),
                   ),
-                ),
                 Positioned(
                   top: 16,
                   left: 0,
@@ -195,7 +227,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
                     ),
                   ),
                 ),
-                if (isRemoteConnected)
+                if (isRemoteConnected && !widget.isVoice)
                   Positioned(
                     top: 16,
                     right: 16,
@@ -220,6 +252,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
+                      if(!widget.isVoice)
                       IconButton(
                         onPressed: toggleCamera,
                         icon: Icon(

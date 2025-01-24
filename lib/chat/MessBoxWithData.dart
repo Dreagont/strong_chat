@@ -335,8 +335,8 @@ class _MessageBoxWithDataState extends State<MessageBoxWithData> {
             Icon(
               Icons.call,
               color: widget.themeProvider.themeMode == ThemeMode.dark
-                  ? Colors.white
-                  : Colors.white,
+                  ? isMyMess ? Colors.white : Colors.white
+                  : isMyMess ? Colors.white : Colors.black,
               size: 20,
             ),
             SizedBox(width: 8),
@@ -345,8 +345,8 @@ class _MessageBoxWithDataState extends State<MessageBoxWithData> {
                 widget.data["message"] ?? '',
                 style: TextStyle(
                   color: widget.themeProvider.themeMode == ThemeMode.dark
-                      ? Colors.white
-                      : Colors.white,
+                      ? isMyMess ? Colors.white : Colors.white
+                      : isMyMess ? Colors.white : Colors.black,
                   fontSize: 16,
                 ),
               ),

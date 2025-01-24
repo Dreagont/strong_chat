@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -51,7 +52,13 @@ class _MyAppState extends State<MyApp> {
               content: Text("You have an incoming call. Do you want to join?"),
               actions: [
                 TextButton(
-                  onPressed: () {
+                  onPressed: () async {
+                    if (event.data.containsKey('roomId')) {
+                      String roomId = event.data['roomId'];
+                      FirebaseFirestore db = FirebaseFirestore.instance;
+                      var roomRef = db.collection('rooms').doc(roomId);
+                      await roomRef.update({'declined': true});
+                    }
                     Navigator.of(context).pop();
                   },
                   child: Text("Decline"),
@@ -68,8 +75,8 @@ class _MyAppState extends State<MyApp> {
                               CaleeName:'',
                               CallerName: '',
                               roomId: roomId,
-                              callerId: '',
-                              calleeId: '',
+                              callerId: event.data['callerId'],
+                              calleeId: event.data['calleeId'],
                               isVoice: isVoice
                           )
                       ),

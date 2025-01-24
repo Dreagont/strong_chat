@@ -1,13 +1,13 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:strong_chat/services/AuthService.dart';
 import 'package:strong_chat/services/FireStoreService.dart';
 
 typedef void StreamStateCallback(MediaStream stream);
 typedef void StreamRemoveCallback();
-typedef void HangUpCallback();
 typedef void CallDurationCallback(Duration duration);
 
 class Signaling {
@@ -29,7 +29,6 @@ class Signaling {
   String? currentRoomText;
   StreamStateCallback? onAddRemoteStream;
   StreamRemoveCallback? onRemoveRemoteStream;
-  HangUpCallback? onHangUp;
   DateTime? _callStartTime;
   DateTime? _callEndTime;
   Timer? _durationTimer;
@@ -70,7 +69,7 @@ class Signaling {
     }
   }
 
-  Future<String> createRoom(RTCVideoRenderer remoteRenderer) async {
+  Future<String> createRoom(RTCVideoRenderer remoteRenderer, RTCVideoRenderer localRenderer, BuildContext context,String callerId, String calleeId) async {
     FirebaseFirestore db = FirebaseFirestore.instance;
     DocumentReference roomRef = db.collection('rooms').doc();
 
@@ -140,8 +139,19 @@ class Signaling {
       roomRef.snapshots().listen((snapshot) {
         if (snapshot.data() != null) {
           Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
-          if (data['hangUp'] == true) {
-            onHangUp?.call();
+          if (data['declined'] == true) {
+            print("decline from callee");
+            hangUp(localRenderer, callerId, calleeId, true, context, false,"",'CreateRoom Decline');
+          }
+        }
+      });
+
+      roomRef.snapshots().listen((snapshot) {
+        if (snapshot.data() != null) {
+          Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
+          if (data['hangUpCallee'] == true) {
+            print("Hang up from Callee");
+            hangUp(localRenderer, callerId, calleeId, true, context, true,"",'CreateRoom Hangup');
           }
         }
       });
@@ -153,9 +163,9 @@ class Signaling {
     }
   }
 
-  Future<void> joinRoom(String roomId, RTCVideoRenderer remoteVideo) async {
+  Future<void> joinRoom(String RoomId, RTCVideoRenderer remoteVideo, RTCVideoRenderer localRenderer, BuildContext context, String callerId, String calleeId) async {
     FirebaseFirestore db = FirebaseFirestore.instance;
-    DocumentReference roomRef = db.collection('rooms').doc(roomId);
+    DocumentReference roomRef = db.collection('rooms').doc(RoomId);
 
     try {
       var roomSnapshot = await roomRef.get();
@@ -216,7 +226,8 @@ class Signaling {
           if (snapshot.data() != null) {
             Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
             if (data['hangUp'] == true) {
-              onHangUp?.call();
+              print("Hang up from caller");
+              hangUp(localRenderer, callerId , calleeId, true, context, true,RoomId,'joinRoom Hangup');
             }
           }
         });
@@ -257,8 +268,11 @@ class Signaling {
   }
 
 
-  Future<void> hangUp(RTCVideoRenderer localVideo, String callerId, String calleeId, bool isMine) async {
+  Future<void> hangUp(
+      RTCVideoRenderer localVideo, String callerId, String calleeId,
+      bool isMine, BuildContext context, bool isHangUp,String RoomId, String Call) async {
     try {
+      print(Call);
       _stopCallTimer();
       print('Final Call Duration: ${formatDuration(_currentCallDuration.inSeconds)}');
 
@@ -273,27 +287,22 @@ class Signaling {
         onRemoveRemoteStream!();
       }
 
-      if (roomId != null) {
+      if(RoomId != null && RoomId != ""){
         FirebaseFirestore db = FirebaseFirestore.instance;
-        var roomRef = db.collection('rooms').doc(roomId);
-
-        await roomRef.update({'hangUp': true});
-
-        var calleeCandidates = await roomRef.collection('calleeCandidates').get();
-        var callerCandidates = await roomRef.collection('callerCandidates').get();
-
-        for (var doc in calleeCandidates.docs) {
-          await doc.reference.delete();
-        }
-        for (var doc in callerCandidates.docs) {
-          await doc.reference.delete();
-        }
-
-        await roomRef.delete();
+        var roomRef = db.collection('rooms').doc(RoomId);
+        await roomRef.update({'hangUpCallee': isHangUp});
       }
 
+      if (roomId != null && roomId != "") {
+        FirebaseFirestore db = FirebaseFirestore.instance;
+        var roomRef = db.collection('rooms').doc(roomId);
+        await roomRef.update({'hangUp': isHangUp});
+
+      }
       localStream?.dispose();
       remoteStream?.dispose();
+
+      Navigator.pop(context);
     } catch (e) {
       print('Error hanging up: $e');
     }
