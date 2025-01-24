@@ -37,6 +37,11 @@ class _MyAppState extends State<MyApp> {
     FirebaseMessaging.onMessage.listen((event) async {
       if (event.data.containsKey('roomId')) {
         String roomId = event.data['roomId'];
+        String isVoicetemp = event.data['isVoice'];
+        bool isVoice = false ;
+        if(isVoicetemp == 'true'){
+          isVoice = true;
+        }
         print("roomID: $roomId");
         showDialog(
           context: navigatorKey.currentState!.context,
@@ -47,7 +52,7 @@ class _MyAppState extends State<MyApp> {
               actions: [
                 TextButton(
                   onPressed: () {
-                    Navigator.of(context).pop(); // Close the dialog
+                    Navigator.of(context).pop();
                   },
                   child: Text("Decline"),
                 ),
@@ -62,7 +67,11 @@ class _MyAppState extends State<MyApp> {
                               notificationToken: '',
                               CaleeName:'',
                               CallerName: '',
-                              roomId: roomId)
+                              roomId: roomId,
+                              callerId: '',
+                              calleeId: '',
+                              isVoice: isVoice
+                          )
                       ),
                     );
                   },

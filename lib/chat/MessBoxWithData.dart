@@ -176,24 +176,24 @@ class _MessageBoxWithDataState extends State<MessageBoxWithData> {
                 // Likes indicator
                 if (hasLikes)
                   Positioned(
-                    bottom: -10,
+                    bottom: -5,
                     left: isMyMess ? 10 : null,
                     right: isMyMess ? null : 10,
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
                         Container(
-                          width: 28,
-                          height: 28,
+                          width: 18,
+                          height: 18,
                           decoration: BoxDecoration(
-                            color: Colors.blueGrey,
+                            color: Colors.white38,
                             borderRadius: BorderRadius.circular(14),
                           ),
                         ),
                         Icon(
                           Icons.favorite,
                           color: Colors.red,
-                          size: 20,
+                          size: 14,
                         ),
                       ],
                     ),

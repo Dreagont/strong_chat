@@ -1,9 +1,14 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:strong_chat/services/AuthService.dart';
+import 'package:strong_chat/services/FireStoreService.dart';
 
 typedef void StreamStateCallback(MediaStream stream);
 typedef void StreamRemoveCallback();
 typedef void HangUpCallback();
+typedef void CallDurationCallback(Duration duration);
 
 class Signaling {
   Map<String, dynamic> configuration = {
@@ -25,6 +30,12 @@ class Signaling {
   StreamStateCallback? onAddRemoteStream;
   StreamRemoveCallback? onRemoveRemoteStream;
   HangUpCallback? onHangUp;
+  DateTime? _callStartTime;
+  DateTime? _callEndTime;
+  Timer? _durationTimer;
+  CallDurationCallback? onCallDurationUpdate;
+  Duration _currentCallDuration = Duration.zero;
+  Duration get currentCallDuration => _currentCallDuration;
 
   Future<void> startCamera(RTCVideoRenderer localVideo) async {
     if (localStream != null) {
@@ -233,8 +244,27 @@ class Signaling {
     }
   }
 
-  Future<void> hangUp(RTCVideoRenderer localVideo) async {
+  String formatDuration(int seconds) {
+    int hours = seconds ~/ 3600;
+    int minutes = (seconds % 3600) ~/ 60;
+    int secs = seconds % 60;
+
+    if (hours > 0) {
+      return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+    } else {
+      return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+    }
+  }
+
+
+  Future<void> hangUp(RTCVideoRenderer localVideo, String callerId, String calleeId, bool isMine) async {
     try {
+      _stopCallTimer();
+      print('Final Call Duration: ${formatDuration(_currentCallDuration.inSeconds)}');
+
+      if (callerId == AuthService().getCurrentUserId() && isMine) {
+        FireStoreService().sendMessage(calleeId, formatDuration(_currentCallDuration.inSeconds), 'call', '');
+      }
       localVideo.srcObject?.getTracks().forEach((track) => track.stop());
       remoteStream?.getTracks().forEach((track) => track.stop());
       peerConnection?.close();
@@ -276,6 +306,15 @@ class Signaling {
 
     peerConnection?.onConnectionState = (RTCPeerConnectionState state) {
       print('Connection state: $state');
+
+      if (state == RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
+        _startCallTimer();
+      }
+
+      if (state == RTCPeerConnectionState.RTCPeerConnectionStateClosed ||
+          state == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected) {
+        _stopCallTimer();
+      }
     };
 
     peerConnection?.onSignalingState = (RTCSignalingState state) {
@@ -295,5 +334,25 @@ class Signaling {
         }
       }
     };
+  }
+
+  void _startCallTimer() {
+    print('start');
+    _callStartTime = DateTime.now();
+    _durationTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+      if (_callStartTime != null) {
+        _currentCallDuration = DateTime.now().difference(_callStartTime!);
+        onCallDurationUpdate?.call(_currentCallDuration);
+      }
+    });
+  }
+
+  void _stopCallTimer() {
+    print('stop');
+    _durationTimer?.cancel();
+    _callEndTime = DateTime.now();
+    if (_callStartTime != null) {
+      _currentCallDuration = _callEndTime!.difference(_callStartTime!);
+    }
   }
 }

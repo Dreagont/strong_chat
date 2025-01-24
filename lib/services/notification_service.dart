@@ -75,6 +75,9 @@ class NotificationService {
     required String body,
     required String token,
     required String roomId,
+    required String callerId,
+    required String calleeId,
+    required String isVoice,
   }) async {
     try {
       String accessToken = await getAccessToken();
@@ -87,6 +90,9 @@ class NotificationService {
           },
           'data': {
             'roomId': roomId,
+            'callerId': callerId,
+            'calleeId': calleeId,
+            'isVoice': isVoice
           },
         },
       };

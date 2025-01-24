@@ -445,28 +445,63 @@ class _ChatPageState extends State<ChatPage> {
                   snapshot.hasData) {
                 userToken = snapshot.data;
               }
-              return IconButton(
-                icon: const Icon(Icons.videocam_outlined),
-                color: Colors.white,
-                onPressed: () async {
-                  final name = await chatService.fetchUserName(userId);
-                  if (userToken != null) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => VideoCallPage(
-                          number: 1,
-                          notificationToken: userToken!,
-                          CaleeName: widget.friendData['name'],
-                          CallerName: name,
-                          roomId: '',
-                        ),
-                      ),
-                    );
-                  } else {
-                    debugPrint('Token is not available');
-                  }
-                },
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.call_outlined),
+                    color: Colors.white,
+                    onPressed: () async {
+                      final name = await chatService.fetchUserName(userId);
+                      if (userToken != null) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => VideoCallPage(
+                              number: 1,
+                              notificationToken: userToken!,
+                              CaleeName: widget.friendData['name'],
+                              CallerName: name,
+                              roomId: '',
+                              isVoice: true,
+                              callerId: userId,
+                              calleeId: widget.friendData['id'],
+                            ),
+                          ),
+                        );
+                      } else {
+                        debugPrint('Token is not available');
+                      }
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.videocam_outlined),
+                    color: Colors.white,
+                    onPressed: () async {
+                      final name = await chatService.fetchUserName(userId);
+                      if (userToken != null) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => VideoCallPage(
+                              number: 1,
+                              notificationToken: userToken!,
+                              CaleeName: widget.friendData['name'],
+                              CallerName: name,
+                              roomId: '',
+                              isVoice: false,
+                              callerId: userId,
+                              calleeId: widget.friendData['id'],
+                            ),
+                          ),
+                        );
+                      } else {
+                        debugPrint('Token is not available');
+                      }
+                    },
+                  ),
+
+                ],
               );
             },
           ),

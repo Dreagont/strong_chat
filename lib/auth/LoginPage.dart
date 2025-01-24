@@ -189,6 +189,10 @@ class _LoginPageState extends State<LoginPage> {
                   onPressed: () => _quickLogin('huynhannguyen222@gmail.com', '123456'),
                   child: Text('Quick Login nguyen222'),
                 ),
+                ElevatedButton(
+                  onPressed: () => _quickLogin('mvm@gmail.com', '123456'),
+                  child: Text('Quick Login MVM'),
+                ),
               ],
             ),
             TextButton(
