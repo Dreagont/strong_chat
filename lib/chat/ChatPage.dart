@@ -466,6 +466,7 @@ class _ChatPageState extends State<ChatPage> {
                               isVoice: true,
                               callerId: userId,
                               calleeId: widget.friendData['id'],
+                              hangupPerson: true,
                             ),
                           ),
                         );
@@ -492,6 +493,7 @@ class _ChatPageState extends State<ChatPage> {
                               isVoice: false,
                               callerId: userId,
                               calleeId: widget.friendData['id'],
+                              hangupPerson: true,
                             ),
                           ),
                         );

@@ -18,9 +18,20 @@ class Signaling {
           'stun:stun1.l.google.com:19302',
           'stun:stun2.l.google.com:19302'
         ]
+      },
+      {
+        'urls': 'turn:relay1.expressturn.com:3478',
+        'username': 'efH7AGCE0TC92OMTXN',
+        'credential': 'dJhLxWSwBz01Deh6'
+      },
+      {
+        'urls': 'turn:relay1.expressturn.com:3478',
+        'username': 'efGEDLUYAY5WK8HNF1',
+        'credential': 'GMgJZWd0dtV7ydUr'
       }
     ]
   };
+
 
   RTCPeerConnection? peerConnection;
   MediaStream? localStream;
@@ -141,7 +152,9 @@ class Signaling {
           Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
           if (data['declined'] == true) {
             print("decline from callee");
-            hangUp(localRenderer, callerId, calleeId, true, context, false,"",'CreateRoom Decline');
+            hangUp(localRenderer, callerId, calleeId, true, context, false,"",'declined',true);
+            //false là để thông báo nó là hangup hay declined
+            // còn true ở cuối để thông báo ai là người tắt true là caller còn false là callee
           }
         }
       });
@@ -149,9 +162,9 @@ class Signaling {
       roomRef.snapshots().listen((snapshot) {
         if (snapshot.data() != null) {
           Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
-          if (data['hangUpCallee'] == true) {
+          if (data['hangUpFromCallee'] == true) {
             print("Hang up from Callee");
-            hangUp(localRenderer, callerId, calleeId, true, context, true,"",'CreateRoom Hangup');
+            hangUp(localRenderer, callerId, calleeId, true, context, true,"",'hangUpFromCallee',false);
           }
         }
       });
@@ -225,9 +238,9 @@ class Signaling {
         roomRef.snapshots().listen((snapshot) {
           if (snapshot.data() != null) {
             Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
-            if (data['hangUp'] == true) {
+            if (data['hangUpFromCaller'] == true) {
               print("Hang up from caller");
-              hangUp(localRenderer, callerId , calleeId, true, context, true,RoomId,'joinRoom Hangup');
+              hangUp(localRenderer, callerId , calleeId, true, context, true,RoomId,'hangUpFromCaller',true);
             }
           }
         });
@@ -270,7 +283,7 @@ class Signaling {
 
   Future<void> hangUp(
       RTCVideoRenderer localVideo, String callerId, String calleeId,
-      bool isMine, BuildContext context, bool isHangUp,String RoomId, String Call) async {
+      bool isMine, BuildContext context, bool isHangUp,String RoomId, String Call,bool hangupPerson) async {
     try {
       print(Call);
       _stopCallTimer();
@@ -287,17 +300,23 @@ class Signaling {
         onRemoveRemoteStream!();
       }
 
-      if(RoomId != null && RoomId != ""){
-        FirebaseFirestore db = FirebaseFirestore.instance;
-        var roomRef = db.collection('rooms').doc(RoomId);
-        await roomRef.update({'hangUpCallee': isHangUp});
-      }
-
-      if (roomId != null && roomId != "") {
-        FirebaseFirestore db = FirebaseFirestore.instance;
-        var roomRef = db.collection('rooms').doc(roomId);
-        await roomRef.update({'hangUp': isHangUp});
-
+      if(isHangUp){
+        if(hangupPerson)   //true là caller  thông báo cho thằng callee biết
+        {
+          if (roomId != null && roomId != "") {
+            FirebaseFirestore db = FirebaseFirestore.instance;
+            var roomRef = db.collection('rooms').doc(roomId);
+            await roomRef.update({'hangUpFromCaller': isHangUp});
+          }
+        }
+        if(!hangupPerson) //false là callee thông báo cho thằng caller biết
+        {
+          if(RoomId != null && RoomId != ""){
+            FirebaseFirestore db = FirebaseFirestore.instance;
+            var roomRef = db.collection('rooms').doc(RoomId);
+            await roomRef.update({'hangUpFromCallee': isHangUp});
+          }
+        }
       }
       localStream?.dispose();
       remoteStream?.dispose();

@@ -77,7 +77,8 @@ class _MyAppState extends State<MyApp> {
                               roomId: roomId,
                               callerId: event.data['callerId'],
                               calleeId: event.data['calleeId'],
-                              isVoice: isVoice
+                              isVoice: isVoice,
+                              hangupPerson: false,
                           )
                       ),
                     );

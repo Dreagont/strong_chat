@@ -15,6 +15,7 @@ class VideoCallPage extends StatefulWidget {
   final String callerId;
   final String calleeId;
   final bool isVoice;
+  final bool hangupPerson;
 
   const VideoCallPage({
     super.key,
@@ -25,7 +26,8 @@ class VideoCallPage extends StatefulWidget {
     required this.roomId,
     required this.callerId,
     required this.calleeId,
-    required this.isVoice
+    required this.isVoice,
+    required this.hangupPerson
   });
 
   @override
@@ -154,7 +156,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
 
   void _endCall(bool isMine) {
     _timer?.cancel();
-    signaling.hangUp(_localRenderer, widget.callerId, widget.calleeId, isMine, context, true, widget.roomId, "VideoCall");
+    signaling.hangUp(_localRenderer, widget.callerId, widget.calleeId, isMine, context, true, widget.roomId, "VideoCall",widget.hangupPerson);
   }
 
   Future<void> _fetchFriendAvatar() async {
