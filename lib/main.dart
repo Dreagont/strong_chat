@@ -13,11 +13,24 @@ import 'package:strong_chat/services/notification_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  print("1234567890background");
+  debugPrint("Background message received. Room ID: ${message.data['roomId']}");
+
+  if (message.notification != null) {
+    debugPrint("FCM already displaying the notification, skipping showNotification()");
+    return;
+  }
+  LocalNotificationService().showNotification(message);
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await LocalNotificationService().requestPermission();
   await LocalNotificationService().init();
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   runApp(MyApp());
 }
 
@@ -32,6 +45,7 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     notificationHandler();
+
   }
 
   void notificationHandler() {
@@ -48,7 +62,7 @@ class _MyAppState extends State<MyApp> {
           context: navigatorKey.currentState!.context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: Text(event.notification?.title ?? "New Call"),
+              title: Text(event.data['title'] ?? "New Call"),
               content: Text("You have an incoming call. Do you want to join?"),
               actions: [
                 TextButton(
@@ -70,15 +84,15 @@ class _MyAppState extends State<MyApp> {
                       context,
                       MaterialPageRoute(
                           builder: (context) => VideoCallPage(
-                              number: 2,
-                              notificationToken: '',
-                              CaleeName:'',
-                              CallerName: '',
-                              roomId: roomId,
-                              callerId: event.data['callerId'],
-                              calleeId: event.data['calleeId'],
-                              isVoice: isVoice,
-                              hangupPerson: false,
+                            number: 2,
+                            notificationToken: '',
+                            CaleeName:'',
+                            CallerName: '',
+                            roomId: roomId,
+                            callerId: event.data['callerId'],
+                            calleeId: event.data['calleeId'],
+                            isVoice: isVoice,
+                            hangupPerson: false,
                           )
                       ),
                     );

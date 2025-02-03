@@ -16,6 +16,7 @@ class Constant {
       'https://fcm.googleapis.com/v1/projects/flutter-final-app-bcd9d/messages:send';
 }
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 class NotificationService {
   Future<String> getAccessToken() async {
@@ -84,18 +85,17 @@ class NotificationService {
       Map<String, dynamic> payload = {
         'message': {
           'token': token,
-          'notification': {
-            'title': title,
-            'body': body,
-          },
           'data': {
             'roomId': roomId,
             'callerId': callerId,
             'calleeId': calleeId,
-            'isVoice': isVoice
+            'isVoice': isVoice,
+            'title': title,
+            'body': body,
           },
         },
       };
+
       String dataNotifications = jsonEncode(payload);
       var response = await http.post(
         Uri.parse(Constant.BASE_URL),
@@ -105,6 +105,7 @@ class NotificationService {
         },
         body: dataNotifications,
       );
+
       if (response.statusCode == 200) {
         return true;
       } else {
@@ -116,6 +117,7 @@ class NotificationService {
       return false;
     }
   }
+
 
 }
 
@@ -184,15 +186,57 @@ class LocalNotificationService {
   Future<void> init() async {
     const AndroidInitializationSettings initializationSettingsAndroid =
     AndroidInitializationSettings('@mipmap/ic_launcher');
+
     const InitializationSettings initializationSettings =
     InitializationSettings(android: initializationSettingsAndroid);
 
-    await flutterLocalNotificationsPlugin.initialize(initializationSettings,);
+    await flutterLocalNotificationsPlugin.initialize(
+      initializationSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse response) async {
+        print("nooooooooooooooooo: ${response.actionId}");
+        String actionId = response.actionId ?? '';
+        if (actionId == 'accept') {
+          String? payload = response.payload;
+          Map<String, dynamic> callData = jsonDecode(payload!);
+          print("Call Data: $callData");
+          navigatorKey.currentState?.push(
+            MaterialPageRoute(
+              builder: (context) => VideoCallPage(
+                number: 2,
+                notificationToken: '',
+                CaleeName:'',
+                CallerName: '',
+                roomId: callData['roomId'],
+                callerId: callData['callerId'],
+                calleeId: callData['calleeId'],
+                isVoice: callData['isVoice'],
+                hangupPerson: false,
+              ),
+            ),
+          );
+
+        } else if (actionId == 'decline') {
+          String? payload = response.payload;
+          Map<String, dynamic> callData = jsonDecode(payload!);
+          String roomId = callData['roomId'];
+          FirebaseFirestore db = FirebaseFirestore.instance;
+          var roomRef = db.collection('rooms').doc(roomId);
+          await roomRef.update({'declined': true});
+        }
+      },
+    );
   }
 
 
-  showNotification(RemoteMessage message) async {
-    const AndroidNotificationDetails androidNotificationDetails =
+  Future<void> showNotification(RemoteMessage message) async {
+    String? roomId = message.data['roomId'];
+    bool isCallNotification = roomId != null && roomId.isNotEmpty;
+    print("isCallNotification: $isCallNotification");
+    String? callerId = message.data['callerId'];
+    String? calleeId = message.data['calleeId'];
+    String? isVoice = message.data['isVoice'];
+
+    final AndroidNotificationDetails androidNotificationDetails =
     AndroidNotificationDetails(
       'channel_id',
       'channel_name',
@@ -200,22 +244,37 @@ class LocalNotificationService {
       importance: Importance.max,
       priority: Priority.high,
       ticker: 'ticker',
+      actions: isCallNotification
+          ? [
+        const AndroidNotificationAction(
+          'accept',
+          'Accept',
+          showsUserInterface: true,
+        ),
+        const AndroidNotificationAction(
+          'decline',
+          'Decline',
+          showsUserInterface: true,
+        ),
+      ]
+          : [],
     );
-    const NotificationDetails notificationDetails =
+
+    final NotificationDetails notificationDetails =
     NotificationDetails(android: androidNotificationDetails);
-
-    String body = message.notification?.body ?? '';
-    if (body.length > 120) {
-      body = body.substring(0, 120) + '...';
-    }
-
+    Map<String, dynamic> callData = {
+      'roomId': roomId,
+      'callerId': callerId,
+      'calleeId': calleeId,
+      'isVoice': isVoice,
+    };
 
     await flutterLocalNotificationsPlugin.show(
-      message.hashCode,
-      message.notification!.title,
-      body,
-      notificationDetails,
+        message.hashCode,
+        message.notification?.title ?? message.data['title'] ?? "New Notification",
+        message.notification?.body ?? message.data['body'] ?? "",
+        notificationDetails,
+        payload: jsonEncode(callData)
     );
-
   }
 }

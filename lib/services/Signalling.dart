@@ -268,10 +268,11 @@ class Signaling {
     }
   }
 
-  String formatDuration(int seconds) {
-    int hours = seconds ~/ 3600;
-    int minutes = (seconds % 3600) ~/ 60;
-    int secs = seconds % 60;
+  String formatDuration(int milliseconds) {
+    int totalSeconds = milliseconds ~/ 1000;
+    int hours = totalSeconds ~/ 3600;
+    int minutes = (totalSeconds % 3600) ~/ 60;
+    int secs = totalSeconds % 60;
 
     if (hours > 0) {
       return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
@@ -283,15 +284,20 @@ class Signaling {
 
   Future<void> hangUp(
       RTCVideoRenderer localVideo, String callerId, String calleeId,
-      bool isMine, BuildContext context, bool isHangUp,String RoomId, String Call,bool hangupPerson) async {
+      bool isMine, BuildContext context, bool isHangUp,
+      String RoomId, String Call, bool hangupPerson) async {
     try {
-      print(Call);
       _stopCallTimer();
-      print('Final Call Duration: ${formatDuration(_currentCallDuration.inSeconds)}');
+      print('Final Call Duration: ${(_currentCallDuration.inSeconds)}');
 
       if (callerId == AuthService().getCurrentUserId() && isMine) {
-        FireStoreService().sendMessage(calleeId, formatDuration(_currentCallDuration.inSeconds), 'call', '');
+        if (Call == 'declined' || _currentCallDuration.inMilliseconds == 0) {
+          FireStoreService().sendMessage(calleeId, 'Missing Call', 'call', '');
+        } else {
+          FireStoreService().sendMessage(calleeId, formatDuration(_currentCallDuration.inMilliseconds), 'call', '');
+        }
       }
+
       localVideo.srcObject?.getTracks().forEach((track) => track.stop());
       remoteStream?.getTracks().forEach((track) => track.stop());
       peerConnection?.close();
@@ -367,7 +373,7 @@ class Signaling {
   void _startCallTimer() {
     print('start');
     _callStartTime = DateTime.now();
-    _durationTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+    _durationTimer = Timer.periodic(Duration(milliseconds: 1), (timer) {
       if (_callStartTime != null) {
         _currentCallDuration = DateTime.now().difference(_callStartTime!);
         onCallDurationUpdate?.call(_currentCallDuration);
@@ -383,4 +389,5 @@ class Signaling {
       _currentCallDuration = _callEndTime!.difference(_callStartTime!);
     }
   }
+
 }

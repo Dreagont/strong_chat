@@ -10,6 +10,7 @@ import 'package:strong_chat/chat/Media/FullScreenMediaView.dart';
 import 'package:strong_chat/services/AuthService.dart';
 import 'package:strong_chat/services/FireStoreService.dart';
 import 'package:universal_io/io.dart';
+import '../call/Videocall.dart';
 import '../pages/ChangeTheme.dart';
 import 'ChatUtils/ImageWithPlaceholder.dart';
 import 'Media/VideoPlayerWidget.dart';
@@ -42,7 +43,7 @@ class MessageBoxWithData extends StatefulWidget {
 
 class _MessageBoxWithDataState extends State<MessageBoxWithData> {
   bool isHovered = false;
-
+  String? userToken;
   Timer? _hoverTimer;
 
   @override
@@ -120,7 +121,7 @@ class _MessageBoxWithDataState extends State<MessageBoxWithData> {
                   child: Container(
                     decoration: (widget.data["messType"] == "image" ||
                         widget.data["messType"] == "video" ||
-                        widget.data["messType"] == "holder")
+                        widget.data["messType"] == "holder" || widget.data["messType"] == 'call')
                         ? null
                         : BoxDecoration(
                       color: messageColor,
@@ -128,7 +129,7 @@ class _MessageBoxWithDataState extends State<MessageBoxWithData> {
                     ),
                     padding: (widget.data["messType"] == "image" ||
                         widget.data["messType"] == "video" ||
-                        widget.data["messType"] == "holder")
+                        widget.data["messType"] == "holder" || widget.data["messType"] == 'call')
                         ? null
                         : EdgeInsets.all(16),
                     margin: EdgeInsets.symmetric(vertical: 5, horizontal: 25),
@@ -207,6 +208,7 @@ class _MessageBoxWithDataState extends State<MessageBoxWithData> {
   }
 
   Widget _buildMessageContent(BuildContext context, bool isMyMess) {
+    String userId = AuthService().getCurrentUserId();
     switch (widget.data["messType"]) {
       case "image":
         return ClipRRect(
@@ -330,32 +332,172 @@ class _MessageBoxWithDataState extends State<MessageBoxWithData> {
           ),
         );
       case "call":
-        return Row(
-          children: [
-            Icon(
-              Icons.call,
-              color: widget.themeProvider.themeMode == ThemeMode.dark
-                  ? isMyMess ? Colors.white : Colors.white
-                  : isMyMess ? Colors.white : Colors.black,
-              size: 20,
-            ),
-            SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                widget.data["message"] ?? '',
-                style: TextStyle(
-                  color: widget.themeProvider.themeMode == ThemeMode.dark
-                      ? isMyMess ? Colors.white : Colors.white
-                      : isMyMess ? Colors.white : Colors.black,
-                  fontSize: 16,
+        return Container(
+          margin: EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+          decoration: BoxDecoration(
+            color: widget.themeProvider.themeMode == ThemeMode.dark
+                ? Colors.grey[850]
+                : Colors.grey[200],
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 6,
+                offset: Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () {
+              },
+              hoverColor: Colors.transparent,
+              highlightColor: Colors.transparent,
+              splashColor: Colors.transparent,
+              child: Padding(
+                padding: EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          widget.data['message'] == 'Missing Call'
+                              ? Icons.phone_callback
+                              : Icons.call,
+                          color: widget.data['message'] == 'Missing Call'
+                              ? Colors.red
+                              : widget.themeProvider.themeMode == ThemeMode.dark
+                              ? isMyMess ? Colors.green : Colors.blue
+                              : isMyMess ? Colors.green : Colors.blue,
+                          size: 24,
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            widget.data['message'] == 'Missing Call'
+                                ? 'Missing Call'
+                                : isMyMess ? 'Call' : 'Incoming Call',
+                            style: TextStyle(
+                              color: widget.themeProvider.themeMode == ThemeMode.dark
+                                  ? Colors.white
+                                  : Colors.black87,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 17,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (widget.data['message'] != 'Missing Call') ...[
+                      SizedBox(height: 8),
+                      Text(
+                        "Duration: ${widget.data['message']}" ,
+                        style: TextStyle(
+                          color: widget.themeProvider.themeMode == ThemeMode.dark
+                              ? Colors.white70
+                              : Colors.black54,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ],
+                    if (widget.data['message'] == 'Missing Call')
+                      StreamBuilder<String?>(
+                        stream: FireStoreService().getUserTokenStream(widget.friendData['id']),
+                        builder: (context, snapshot) {
+                          final userToken = snapshot.connectionState == ConnectionState.active && snapshot.hasData
+                              ? snapshot.data
+                              : null;
+
+                          return Padding(
+                            padding: EdgeInsets.only(top: 8),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  "Callback",
+                                  style: TextStyle(
+                                    color: Colors.red.shade700,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                Row(
+                                  children: [
+                                    _buildCallBackButton(
+                                      context,
+                                      icon: Icons.call_outlined,
+                                      isVoice: true,
+                                      userToken: userToken,
+                                      friendData: widget.friendData,
+                                      userId: userId,
+                                    ),
+                                    SizedBox(width: 8),
+                                    _buildCallBackButton(
+                                      context,
+                                      icon: Icons.videocam_outlined,
+                                      isVoice: false,
+                                      userToken: userToken,
+                                      friendData: widget.friendData,
+                                      userId: userId,
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                  ],
                 ),
               ),
             ),
-          ],
+          ),
         );
       default:
         return Container();
     }
+  }
+
+  Widget _buildCallBackButton(
+      BuildContext context, {
+        required IconData icon,
+        required bool isVoice,
+        required String? userToken,
+        required Map<String, dynamic> friendData,
+        required String userId,
+      }) {
+    return IconButton(
+      icon: Icon(icon, color: Colors.green.shade600),
+      style: IconButton.styleFrom(
+        backgroundColor: Colors.green.shade50,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      onPressed: userToken != null
+          ? () async {
+        final name = await FireStoreService().fetchUserName(userId);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VideoCallPage(
+              number: 1,
+              notificationToken: userToken,
+              CaleeName: friendData['name'],
+              CallerName: name,
+              roomId: '',
+              isVoice: isVoice,
+              callerId: userId,
+              calleeId: friendData['id'],
+              hangupPerson: true,
+            ),
+          ),
+        );
+      }
+          : null,
+    );
   }
 
   void showOptionsMenu(BuildContext context) {
@@ -392,7 +534,7 @@ class _MessageBoxWithDataState extends State<MessageBoxWithData> {
                 _handleDeleteMessage(widget.data['id']);
               },
             ),
-            if (isMyMess && isUndoable)
+            if (isMyMess && isUndoable && widget.data['messType'] != 'call')
               ListTile(
                 leading: Icon(Icons.undo),
                 title: Text("Undo Send"),
