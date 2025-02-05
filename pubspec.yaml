@@ -94,6 +94,8 @@ flutter:
   #   - images/a_dot_ham.jpeg
     - assets/loading.png
     - assets/flutter-final-app-bcd9d-firebase-adminsdk-2jdb9-a6a2150f43.json
+    - assets/logo.jpg
+    - assets/background.jpg
 
 
   # An image asset can refer to one or more resolution-specific "variants", see
