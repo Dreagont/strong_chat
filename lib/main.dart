@@ -8,6 +8,7 @@ import 'package:strong_chat/auth/AuthGate.dart';
 import 'package:strong_chat/call/Videocall.dart';
 import 'package:strong_chat/firebase_options.dart';
 import 'package:strong_chat/pages/ChangeTheme.dart';
+import 'package:strong_chat/pages/SplashScreen.dart';
 import 'package:strong_chat/services/FireStoreService.dart';
 import 'package:strong_chat/services/notification_service.dart';
 
@@ -34,7 +35,12 @@ void main() async {
   await LocalNotificationService().requestPermission();
   await LocalNotificationService().init();
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-  runApp(MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeProvider(),
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {
@@ -168,7 +174,7 @@ class _MyAppState extends State<MyApp> {
         builder: (context, themeProvider, child) {
           return MaterialApp(
             navigatorKey: navigatorKey,
-            home: AuthGate(),
+            home: SplashScreen(),
             debugShowCheckedModeBanner: false,
             theme: ThemeData.light().copyWith(
               primaryColor: Colors.teal,

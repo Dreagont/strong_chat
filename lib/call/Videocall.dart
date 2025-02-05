@@ -110,13 +110,6 @@ class _VideoCallPageState extends State<VideoCallPage> {
     }
   }
 
-  void _startTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      setState(() {
-        _elapsedTime += const Duration(seconds: 1);
-      });
-    });
-  }
 
   String _formatDuration(Duration duration) {
     String minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');

@@ -1,23 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemeProvider extends ChangeNotifier {
   ThemeMode _themeMode = ThemeMode.light;
   bool _isSystemModeSelected = false;
 
+  ThemeProvider() {
+    _loadThemeMode();
+  }
+
   ThemeMode get themeMode => _themeMode;
+
   bool get isSystemModeSelected => _isSystemModeSelected;
 
-  void setThemeMode(ThemeMode themeMode) {
+  void setThemeMode(ThemeMode themeMode) async {
     if (themeMode == ThemeMode.system) {
       _isSystemModeSelected = true;
-      final brightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
-      _themeMode = brightness == Brightness.dark ? ThemeMode.dark : ThemeMode.light;
+      final brightness =
+          WidgetsBinding.instance.platformDispatcher.platformBrightness;
+      _themeMode =
+          brightness == Brightness.dark ? ThemeMode.dark : ThemeMode.light;
     } else {
       _isSystemModeSelected = false;
       _themeMode = themeMode;
     }
     notifyListeners();
+    await _saveThemeMode(themeMode);
+  }
+
+  void _loadThemeMode() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? savedTheme = prefs.getString('themeMode');
+    if (savedTheme != null) {
+      _themeMode = ThemeMode.values
+          .firstWhere((element) => element.toString() == savedTheme);
+    }
+    notifyListeners();
+  }
+
+  Future<void> _saveThemeMode(ThemeMode themeMode) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('themeMode', themeMode.toString());
   }
 }
 
@@ -60,7 +84,8 @@ class ThemeSettingsScreen extends StatelessWidget {
                     backgroundColor: Theme.of(context).scaffoldBackgroundColor,
                     textColor: Theme.of(context).primaryColor,
                   ),
-                  onSelected: () => themeProvider.setThemeMode(ThemeMode.system),
+                  onSelected: () =>
+                      themeProvider.setThemeMode(ThemeMode.system),
                   isSelected: themeProvider.isSystemModeSelected,
                 ),
               ],
@@ -71,8 +96,6 @@ class ThemeSettingsScreen extends StatelessWidget {
     );
   }
 }
-
-
 
 class ThemeOption extends StatelessWidget {
   final String label;
@@ -123,21 +146,32 @@ class ThemeOption extends StatelessWidget {
   }
 }
 
-
 class ThemePreview extends StatelessWidget {
   final Color backgroundColor;
   final Color textColor;
 
-  ThemePreview({ required this.backgroundColor, required this.textColor,});
+  ThemePreview({
+    required this.backgroundColor,
+    required this.textColor,
+  });
 
-  @override Widget build(BuildContext context) {
-    return Container(width: 50,
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 50,
       height: 50,
-      decoration: BoxDecoration(color: backgroundColor,
+      decoration: BoxDecoration(
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey, width: 1),),
+        border: Border.all(color: Colors.grey, width: 1),
+      ),
       child: Center(
-        child: Text('A', style: TextStyle(color: textColor, fontSize: 24),),),);
+        child: Text(
+          'A',
+          style: TextStyle(color: textColor, fontSize: 24),
+        ),
+      ),
+    );
   }
 }
 
@@ -147,14 +181,30 @@ class ThemeSelectionCircle extends StatelessWidget {
 
   ThemeSelectionCircle({required this.onSelected, required this.isSelected});
 
-  @override Widget build(BuildContext context) {
-    return GestureDetector(onTap: onSelected,
-      child: Container(width: 24,
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onSelected,
+      child: Container(
+        width: 24,
         height: 24,
-        decoration: BoxDecoration(shape: BoxShape.circle,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
           border: Border.all(
-            color: isSelected ? Colors.teal : Colors.grey, width: 2,),),
-        child: isSelected ? Center(
-          child: Icon(Icons.check, color: Colors.teal, size: 16,),) : null,),);
+            color: isSelected ? Colors.teal : Colors.grey,
+            width: 2,
+          ),
+        ),
+        child: isSelected
+            ? Center(
+                child: Icon(
+                  Icons.check,
+                  color: Colors.teal,
+                  size: 16,
+                ),
+              )
+            : null,
+      ),
+    );
   }
 }

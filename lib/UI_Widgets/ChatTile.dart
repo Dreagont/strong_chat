@@ -13,6 +13,7 @@ class ChatTile extends StatefulWidget {
   final void Function()? onTap;
   final void Function()? onOptionsPressed;
   final ThemeProvider theme;
+  final int count;
 
   const ChatTile({
     super.key,
@@ -25,6 +26,7 @@ class ChatTile extends StatefulWidget {
     this.onTap,
     this.onOptionsPressed,
     required this.theme,
+    required this.count
   });
 
   @override
@@ -39,7 +41,13 @@ class _ChatTileState extends State<ChatTile> {
     String formattedTime = formatTime(widget.timestamp);
 
     String displayMessage;
-    TextStyle messageStyle = TextStyle(fontSize: 14, color: Colors.grey[600]);
+    TextStyle messageStyle = TextStyle(
+      fontSize: 14,
+      color: widget.theme.themeMode == ThemeMode.dark
+          ? (widget.count > 0 ? Colors.white : Colors.grey[600])
+          : (widget.count > 0 ? Colors.black : Colors.grey[600]),
+      fontWeight: widget.count > 0 ? FontWeight.bold : FontWeight.normal,
+    );
 
     switch (widget.messType) {
       case 'text':
@@ -60,6 +68,7 @@ class _ChatTileState extends State<ChatTile> {
       case 'call':
         displayMessage = '[A call]';
         messageStyle = messageStyle.copyWith(fontStyle: FontStyle.italic);
+        break;
       default:
         displayMessage = '[Unknown message type]';
         messageStyle = messageStyle.copyWith(fontStyle: FontStyle.italic);
@@ -77,62 +86,79 @@ class _ChatTileState extends State<ChatTile> {
               : Colors.white,
           child: Column(
             children: [
-              Stack(
-                children: [
-                  ListTile(
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-                    leading: CircleAvatar(
-                      backgroundImage: widget.avatar.isNotEmpty ? NetworkImage(widget.avatar) : null,
-                      radius: 25,
-                      child: widget.avatar.isEmpty ? const Icon(Icons.person, size: 30) : null,
-                    ),
-                    title: Text(
+              ListTile(
+                contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+                leading: CircleAvatar(
+                  backgroundImage: widget.avatar.isNotEmpty ? NetworkImage(widget.avatar) : null,
+                  radius: 25,
+                  child: widget.avatar.isEmpty ? const Icon(Icons.person, size: 30) : null,
+                ),
+                title: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
                       widget.name,
                       style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                     ),
-                    subtitle: Text(
-                      "${widget.senderPrefix}$displayMessage",
-                      style: messageStyle,
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
+                    Text(
+                      formattedTime,
+                      style: TextStyle(fontSize:14,
+                          color: Colors.grey[600]),
                     ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          formattedTime,
-                          style: TextStyle(color: Colors.grey[600]),
+                  ],
+                ),
+                subtitle: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        "${widget.senderPrefix}$displayMessage",
+                        style: messageStyle,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
+                    if (widget.count > 0)
+                      Container(
+                        padding: EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
                         ),
-                        if (kIsWeb && isHovered && widget.onOptionsPressed != null) ...[
-                          SizedBox(width: 8),
-                          Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(16),
-                              onTap: widget.onOptionsPressed,
-                              child: Container(
-                                padding: EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: widget.theme.themeMode == ThemeMode.dark
-                                      ? Colors.grey[800]
-                                      : Colors.grey[200],
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Icon(
-                                  Icons.more_horiz,
-                                  size: 20,
-                                  color: widget.theme.themeMode == ThemeMode.dark
-                                      ? Colors.grey[300]
-                                      : Colors.grey[700],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
+                        child: Text(
+                          widget.count.toString(),
+                          style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.white),
+                        ),
+                      ),
+                  ],
+                ),
+                trailing: kIsWeb && isHovered && widget.onOptionsPressed != null
+                    ? Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: widget.onOptionsPressed,
+                    child: Container(
+                      padding: EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: widget.theme.themeMode == ThemeMode.dark
+                            ? Colors.grey[800]
+                            : Colors.grey[200],
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Icon(
+                        Icons.more_horiz,
+                        size: 20,
+                        color: widget.theme.themeMode == ThemeMode.dark
+                            ? Colors.grey[300]
+                            : Colors.grey[700],
+                      ),
                     ),
                   ),
-                ],
+                )
+                    : null,
               ),
               Padding(
                 padding: const EdgeInsets.only(left: 85),

@@ -133,20 +133,6 @@ class _ChatMoreState extends State<ChatMore> {
                   ),
                   _buildSection(
                     context: context,
-                    title: 'Voice Call',
-                    icon: Icons.call,
-                    onTap: () {},
-                    showDivider: true,
-                  ),
-                  _buildSection(
-                    context: context,
-                    title: 'Video Call',
-                    icon: Icons.videocam,
-                    onTap: () {},
-                    showDivider: true,
-                  ),
-                  _buildSection(
-                    context: context,
                     title: 'Change Nickname',
                     icon: Icons.edit,
                     onTap: () {
@@ -163,17 +149,6 @@ class _ChatMoreState extends State<ChatMore> {
                     title: 'Find Message',
                     icon: Icons.search,
                     onTap: () {
-                      // Navigator.push(
-                      //   context,
-                      //   MaterialPageRoute(
-                      //     builder: (context) => MessageSearchPage(
-                      //       messages: widget.allMessages,
-                      //       friendData: widget.friendData,
-                      //       userName: widget.userName,
-                      //       userAvatar: widget.userAvatar,
-                      //     ),
-                      //   ),
-                      // );
                       Navigator.push(
                         context,
                         MaterialPageRoute(

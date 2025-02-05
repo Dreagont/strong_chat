@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../../services/AuthService.dart';
 import '../../services/FireStoreService.dart';
@@ -76,6 +77,32 @@ class ChatManager {
   void _showSuccessSnackbar(BuildContext context, String message) {
     final snackBar = SnackBar(content: Text(message));
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
+  void toggleNotification(BuildContext context, String friendId) {
+    final userId = authService.getCurrentUserId();
+    final chatRef = FirebaseFirestore.instance
+        .collection("Users")
+        .doc(userId)
+        .collection("chats")
+        .doc(friendId);
+
+    chatRef.get().then((doc) {
+      final data = doc.data() as Map<String, dynamic>?;
+      final isNotificationEnabled = data?['notificationEnabled'] ?? true;
+
+      chatRef.update({
+        'notificationEnabled': !isNotificationEnabled,
+      }).then((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Notifications ${isNotificationEnabled ? 'disabled' : 'enabled'}')),
+        );
+      }).catchError((error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to toggle notifications')),
+        );
+      });
+    });
   }
 
   void showChangeNicknameDialog(BuildContext context, Map<String, dynamic> friendData) {

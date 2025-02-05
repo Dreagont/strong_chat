@@ -34,7 +34,7 @@ class FireStoreService {
       return;
     }
 
-    activeListeners.add(chatBoxId); // Add to active listeners
+    activeListeners.add(chatBoxId);
 
     fireStore
         .collection("ChatRoom")
@@ -57,7 +57,7 @@ class FireStoreService {
 
               final isNoti = await NotificationService().pushNotification(
                   title: "New Message From $senderName",
-                  body: messageType == 'text' ? message : 'Đã gửi 1 file',
+                  body: messageType == 'text' ? message : messageType == 'call' ? 'A Call' : 'Send a file',
                   token: userToken
               );
               if(isNoti){
@@ -132,7 +132,7 @@ class FireStoreService {
     await _updateUserChatList(userId, friendId);
     await _updateUserChatList(friendId, userId);
 
-    await _saveMessageToChatRoom(chatBoxId, message);
+    await _saveMessageToChatRoom(chatBoxId, message, friendId, userId);
   }
 
   Message _createMessage(String senderId, String friendId, String message,
@@ -193,7 +193,7 @@ class FireStoreService {
     return userSnapshot.get('avatar') ?? 'User';
   }
 
-  Future<void> _saveMessageToChatRoom(String chatBoxId, Message message) async {
+  Future<void> _saveMessageToChatRoom(String chatBoxId, Message message, String friendId, String userId) async {
     DocumentReference? messageRef;
     try {
       messageRef = await fireStore
@@ -201,26 +201,26 @@ class FireStoreService {
           .doc(chatBoxId)
           .collection("messages")
           .add(message.MessToMap());
-
-      try {
-        // Fetch the friend's notification token and sender's name
-        final friendToken = await getUserToken(message.friendId);
-        final senderName = await fetchUserName(message.senderId);
-        // Send the notification
-        final isNotificationSent = await NotificationService().pushNotification(
-          title: 'New Message From $senderName',
-          body: message.messType == 'text' ? message.message : 'Đã gửi 1 file',
-          token: friendToken,
-        );
-        if (isNotificationSent) {
-          print("from save");
-          messageRef.update({'isNoti_isDeliver': true});
-          print("Notification sent and isNoti_isDeliver updated");
+      bool isNoti = (await isNotificationEnabledStream(userId, friendId)) as bool;
+      if (isNoti) {
+        try {
+          final friendToken = await getUserToken(message.friendId);
+          final senderName = await fetchUserName(message.senderId);
+          final isNotificationSent = await NotificationService().pushNotification(
+            title: 'New Message From $senderName',
+            body: message.messType == 'text' ? message.message :message.messType == 'call' ?  'A Call' : 'Send a file',
+            token: friendToken,
+          );
+          if (isNotificationSent) {
+            print("from save");
+            messageRef.update({'isNoti_isDeliver': true});
+            print("Notification sent and isNoti_isDeliver updated");
+          }
+        } catch (e) {
+          debugPrint('Error sending notification: $e');
         }
-      } catch (e) {
-        debugPrint('Error sending notification: $e');
+        messageRef.update({'isChecked': true});
       }
-      messageRef.update({'isChecked': true});
     } catch (e) {
       debugPrint('Error saving message to Firestore: $e');
     }
@@ -579,5 +579,42 @@ class FireStoreService {
 
   Future<void> updateUserInfo(String userId, Map<String, String> userInfo) async {
     await fireStore.collection('Users').doc(userId).update(userInfo);
+  }
+
+  Future<void> setNotificationEnabled(String userId, String friendId) async {
+    final docRef = FirebaseFirestore.instance
+        .collection("Users")
+        .doc(userId)
+        .collection("chats")
+        .doc(friendId);
+
+    final snapshot = await docRef.get();
+
+    if (!snapshot.exists || !snapshot.data()!.containsKey('notificationEnabled')) {
+      await docRef.set({'notificationEnabled': false}, SetOptions(merge: true));
+    }
+  }
+
+  Stream<bool> isNotificationEnabledStream(String userId, String friendId) {
+    final docRef = FirebaseFirestore.instance
+        .collection("Users")
+        .doc(userId)
+        .collection("chats")
+        .doc(friendId);
+
+    return docRef.snapshots().map((snapshot) {
+      if (snapshot.exists) {
+        final data = snapshot.data() as Map<String, dynamic>;
+
+        if (!data.containsKey('notificationEnabled')) {
+          docRef.set({'notificationEnabled': false}, SetOptions(merge: true));
+          return false;
+        }
+        return data['notificationEnabled'] ?? false;
+      } else {
+        docRef.set({'notificationEnabled': false}, SetOptions(merge: true));
+        return false;
+      }
+    });
   }
 }

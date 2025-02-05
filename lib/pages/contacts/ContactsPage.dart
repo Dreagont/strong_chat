@@ -45,12 +45,8 @@ class _ContactsPageState extends State<ContactsPage> {
                 MaterialPageRoute(builder: (context) => FriendRequestsPage()),
               );
             },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(12),
-              ),
+            child: Padding(
+              padding: const EdgeInsets.all(8),
               child: Row(
                 children: [
                   const Icon(Icons.person_add, size: 24),
@@ -111,19 +107,24 @@ class _ContactsPageState extends State<ContactsPage> {
               padding: const EdgeInsets.all(16.0),
               child: Text(
                 'Friends (${friends.length})',
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
             ),
-            ...friends.map((friendData) => buildFriendListItem(friendData, context)).toList(),
+            ...friends
+                .map((friendData) => buildFriendListItem(friendData, context))
+                .toList(),
           ],
         );
       },
     );
   }
 
-  Widget buildFriendListItem(Map<String, dynamic> userData, BuildContext context) {
+  Widget buildFriendListItem(
+      Map<String, dynamic> userData, BuildContext context) {
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
       leading: CircleAvatar(
         backgroundImage: NetworkImage(userData['avatar']),
         radius: 30,
