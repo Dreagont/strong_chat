@@ -333,7 +333,6 @@ class _MessageBoxWithDataState extends State<MessageBoxWithData> {
         );
       case "call":
         return Container(
-          margin: EdgeInsets.symmetric(vertical: 8, horizontal: 10),
           decoration: BoxDecoration(
             color: widget.themeProvider.themeMode == ThemeMode.dark
                 ? Colors.grey[850]
@@ -471,7 +470,6 @@ class _MessageBoxWithDataState extends State<MessageBoxWithData> {
     return IconButton(
       icon: Icon(icon, color: Colors.green.shade600),
       style: IconButton.styleFrom(
-        backgroundColor: Colors.green.shade50,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),

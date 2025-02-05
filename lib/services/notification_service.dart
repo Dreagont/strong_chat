@@ -9,6 +9,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
+import 'package:strong_chat/main.dart';
 import '../call/Videocall.dart';
 
 class Constant {
@@ -21,12 +22,14 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 class NotificationService {
   Future<String> getAccessToken() async {
     try {
-      final jsonString = await rootBundle
-          .loadString('assets/flutter-final-app-bcd9d-firebase-adminsdk-2jdb9-a6a2150f43.json');
+      final jsonString = await rootBundle.loadString(
+          'assets/flutter-final-app-bcd9d-firebase-adminsdk-2jdb9-a6a2150f43.json');
       final serviceAccount = json.decode(jsonString);
-      final accountCredentials = ServiceAccountCredentials.fromJson(serviceAccount);
+      final accountCredentials =
+      ServiceAccountCredentials.fromJson(serviceAccount);
       final scopes = ['https://www.googleapis.com/auth/firebase.messaging'];
-      final authClient = await clientViaServiceAccount(accountCredentials, scopes);
+      final authClient =
+      await clientViaServiceAccount(accountCredentials, scopes);
       return (await authClient.credentials).accessToken.data;
     } catch (e) {
       debugPrint("Error getting access token: $e");
@@ -117,11 +120,7 @@ class NotificationService {
       return false;
     }
   }
-
-
 }
-
-
 
 class LocalNotificationService {
   final firebaseFirestore = FirebaseFirestore.instance;
@@ -139,19 +138,26 @@ class LocalNotificationService {
       String? token;
       if (kIsWeb) {
         token = await FirebaseMessaging.instance.getToken(
-          vapidKey: "BPYx6LRkuqxoL_kPj0-blZpIvRPP6zarU_j8nYfBoZawQPFAnqPgcpdquNiz0bXAugUHdqXYFiNSL2emEgr_xxw",
+          vapidKey:
+          "BPYx6LRkuqxoL_kPj0-blZpIvRPP6zarU_j8nYfBoZawQPFAnqPgcpdquNiz0bXAugUHdqXYFiNSL2emEgr_xxw",
         );
         if (token != null) {
           debugPrint("Web FCM Token: $token");
-          await firebaseFirestore.collection('Users').doc(_currentUser!.uid).update({
+          await firebaseFirestore
+              .collection('Users')
+              .doc(_currentUser!.uid)
+              .update({
             'notificationToken': token,
           });
         }
-      } else  {
+      } else {
         token = await FirebaseMessaging.instance.getToken();
         if (token != null) {
           debugPrint("Android FCM Token: $token");
-          await firebaseFirestore.collection('Users').doc(_currentUser!.uid).update({
+          await firebaseFirestore
+              .collection('Users')
+              .doc(_currentUser!.uid)
+              .update({
             'notificationToken': token,
           });
         }
@@ -161,10 +167,12 @@ class LocalNotificationService {
     }
   }
 
-
   Future<void> logout() async {
     try {
-      await firebaseFirestore.collection('Users').doc(_currentUser!.uid).update({
+      await firebaseFirestore
+          .collection('Users')
+          .doc(_currentUser!.uid)
+          .update({
         'notificationToken': '',
       });
       if (kIsWeb) {
@@ -198,23 +206,8 @@ class LocalNotificationService {
         if (actionId == 'accept') {
           String? payload = response.payload;
           Map<String, dynamic> callData = jsonDecode(payload!);
-          print("Call Data: $callData");
-          navigatorKey.currentState?.push(
-            MaterialPageRoute(
-              builder: (context) => VideoCallPage(
-                number: 2,
-                notificationToken: '',
-                CaleeName:'',
-                CallerName: '',
-                roomId: callData['roomId'],
-                callerId: callData['callerId'],
-                calleeId: callData['calleeId'],
-                isVoice: callData['isVoice'],
-                hangupPerson: false,
-              ),
-            ),
-          );
 
+          pendingCallPayload.value = callData;
         } else if (actionId == 'decline') {
           String? payload = response.payload;
           Map<String, dynamic> callData = jsonDecode(payload!);
@@ -226,7 +219,6 @@ class LocalNotificationService {
       },
     );
   }
-
 
   Future<void> showNotification(RemoteMessage message) async {
     String? roomId = message.data['roomId'];
@@ -271,10 +263,11 @@ class LocalNotificationService {
 
     await flutterLocalNotificationsPlugin.show(
         message.hashCode,
-        message.notification?.title ?? message.data['title'] ?? "New Notification",
-        message.notification?.body ?? message.data['body'] ?? "",
+        message.notification?.title ??
+            message.data['title'] ??
+            "New Notification",
+        message.notification?.body ?? message.data['body'] ?? "Click to open",
         notificationDetails,
-        payload: jsonEncode(callData)
-    );
+        payload: jsonEncode(callData));
   }
 }

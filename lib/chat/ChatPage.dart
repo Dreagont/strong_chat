@@ -298,6 +298,7 @@ class _ChatPageState extends State<ChatPage> {
       bool messageExists = displayedMessages.any((msg) =>
       msg['timeStamp'] == message['timeStamp'] &&
           msg['message'] == message['message']);
+      messController.clear();
 
       if (!messageExists) {
         displayedMessages.insert(0, message);
@@ -324,7 +325,6 @@ class _ChatPageState extends State<ChatPage> {
   void sendTextMessage() async {
     if (messController.text.isNotEmpty) {
       String text = messController.text;
-      messController.clear();
       await messageSender.sendTextMessage(text);
     }
   }

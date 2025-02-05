@@ -34,8 +34,7 @@ class UserInput extends StatefulWidget {
 }
 
 class _UserInputState extends State<UserInput> {
-  bool isEmojiVisible = false;
-  final FocusNode _emojiPickerFocus = FocusNode();
+
 
   final FireStoreService chatService = FireStoreService();
   final AuthService authService = AuthService();
@@ -51,6 +50,8 @@ class _UserInputState extends State<UserInput> {
       }
     }
   }
+  bool isEmojiVisible = false;
+  final FocusNode _emojiPickerFocus = FocusNode();
 
   void onEmojiSelected(Category? category, Emoji emoji) {
     widget.messController.text = widget.messController.text + emoji.emoji;

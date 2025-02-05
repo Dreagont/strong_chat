@@ -101,103 +101,103 @@ class _UserInputState extends State<UserInput> {
     final backgroundColor = themeProvider.themeMode == ThemeMode.dark ? Colors.grey[900] : Colors.white;
 
     return Container(
-        color: backgroundColor,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+      color: backgroundColor,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+        Visibility(
+        visible: isEmojiVisible,
+        child: SizedBox(
+          height: 250,
+          child: Focus(
+            focusNode: _emojiPickerFocus,
+            child: EmojiPicker(
+              onEmojiSelected: (category, emoji) => onEmojiSelected(category, emoji),
+              config: Config(
+                height: 256,
+                checkPlatformCompatibility: true,
+                viewOrderConfig: const ViewOrderConfig(),
+                skinToneConfig: const SkinToneConfig(),
+                categoryViewConfig: const CategoryViewConfig(),
+                bottomActionBarConfig: const BottomActionBarConfig(),
+              ),
+            ),
+          ),
+        ),
+      ),
+      Container(
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          border: Border(
+            top: BorderSide(
+              color: Colors.grey.withOpacity(0.2),
+            ),
+          ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Visibility(
-              visible: isEmojiVisible,
-              child: SizedBox(
-                height: 250,
-                child: Focus(
-                  focusNode: _emojiPickerFocus,
-                  child: EmojiPicker(
-                    onEmojiSelected: (category, emoji) => onEmojiSelected(category, emoji),
-                    config: Config(
-                      height: 256,
-                      checkPlatformCompatibility: false,
-                      viewOrderConfig: const ViewOrderConfig(),
-                      skinToneConfig: const SkinToneConfig(),
-                      categoryViewConfig: const CategoryViewConfig(),
-                      bottomActionBarConfig: const BottomActionBarConfig(),
+            IconButton(
+              color: color,
+              icon: const Icon(Icons.attach_file),
+              onPressed: () => showMediaOptions(context),
+            ),
+            IconButton(
+              color: color,
+              icon: Icon(isEmojiVisible ? Icons.keyboard : Icons.emoji_emotions),
+              onPressed: () {
+                setState(() {
+                  isEmojiVisible = !isEmojiVisible;
+                });
+                if (isEmojiVisible) {
+                  FocusScope.of(context).requestFocus(_emojiPickerFocus);
+                  widget.focusNode.unfocus();
+                } else {
+                  FocusScope.of(context).requestFocus(widget.focusNode);
+                }
+              },
+            ),
+
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: RawKeyboardListener(
+                  focusNode: _keyboardListenerFocusNode,
+                  onKey: kIsWeb ? _handleKeyEvent : null,
+                  child: TextFormField(
+                    controller: widget.messController,
+                    focusNode: widget.focusNode,
+                    maxLines: 10,
+                    minLines: 1,
+                    textInputAction: TextInputAction.newline,
+                    keyboardType: TextInputType.multiline,
+                    decoration: const InputDecoration(
+                      hintText: "Type your message",
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      isDense: true,
                     ),
                   ),
                 ),
               ),
             ),
-            Container(
-              decoration: BoxDecoration(
-                color: backgroundColor,
-                border: Border(
-                  top: BorderSide(
-                    color: Colors.grey.withOpacity(0.2),
-                  ),
-                ),
+            Material(
+              color: Colors.transparent,
+              child: IconButton(
+                color: color,
+                onPressed: () {
+                  if (mounted) {
+                    _sendMessage();
+                  }
+                },
+                icon: const Icon(Icons.send),
               ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  IconButton(
-                    color: color,
-                    icon: const Icon(Icons.attach_file),
-                    onPressed: () => showMediaOptions(context),
-                  ),
-                  IconButton(
-                    color: color,
-                    icon: Icon(isEmojiVisible ? Icons.keyboard : Icons.emoji_emotions),
-                    onPressed: () {
-                      setState(() {
-                        isEmojiVisible = !isEmojiVisible;
-                      });
-                      if (isEmojiVisible) {
-                        FocusScope.of(context).requestFocus(_emojiPickerFocus);
-                        widget.focusNode.unfocus();
-                      } else {
-                        FocusScope.of(context).requestFocus(widget.focusNode);
-                      }
-                    },
-                  ),
-
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: RawKeyboardListener(
-                        focusNode: _keyboardListenerFocusNode,
-                        onKey: kIsWeb ? _handleKeyEvent : null,
-                        child: TextFormField(
-                          controller: widget.messController,
-                          focusNode: widget.focusNode,
-                          maxLines: 10,
-                          minLines: 1,
-                          textInputAction: TextInputAction.newline,
-                          keyboardType: TextInputType.multiline,
-                          decoration: const InputDecoration(
-                            hintText: "Type your message",
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            isDense: true,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Material(
-                    color: Colors.transparent,
-                    child: IconButton(
-                      color: color,
-                      onPressed: () {
-                        if (mounted) {
-                          _sendMessage();
-                        }
-                      },
-                      icon: const Icon(Icons.send),
-                    ),
-                  ),
-                ],
-              ),
-            )
+            ),
           ],
-        ));
+        ),
+      )
+      ],
+    ));
   }
 
   void showMediaOptions(BuildContext context) {
