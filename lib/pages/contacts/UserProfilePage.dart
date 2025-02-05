@@ -6,12 +6,12 @@ import '../../services/FireStoreService.dart';
 
 class UserProfilePage extends StatefulWidget {
   final Map<String, dynamic> userData;
-  final String relationshipStatus;
+  final String? relationshipStatus;
 
   UserProfilePage({
     Key? key,
     required this.userData,
-    required this.relationshipStatus,
+    this.relationshipStatus,
   }) : super(key: key);
 
   @override
@@ -27,7 +27,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
   @override
   void initState() {
     super.initState();
-    relationshipStatus = widget.relationshipStatus;
+    relationshipStatus = widget.relationshipStatus!;
   }
 
   void handleFriendAction(BuildContext context) async {
@@ -77,12 +77,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
     final userData = widget.userData;
 
     return Scaffold(
-      appBar: AppBar(title: Text(userData["name"])),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Background Image with Avatar and Name at Bottom Left
             Stack(
               children: [
                 Image.asset(
@@ -90,6 +88,17 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   width: double.infinity,
                   height: 200,
                   fit: BoxFit.cover,
+                ),
+                Padding(
+                  padding: EdgeInsets.fromLTRB(14, 24, 0, 0),
+                  child: IconButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    icon: Icon(Icons.arrow_back_outlined),
+                    color: Colors.white,
+                    iconSize: 22,
+                  ),
                 ),
                 Positioned(
                   left: 16,
@@ -139,31 +148,14 @@ class _UserProfilePageState extends State<UserProfilePage> {
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 10),
-                  // User Info in Separate Rows
-                  Text(
-                    'Email: ${userData["email"]}',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    'Work: ${userData["work"] ?? "unknown"}',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    'Date of Birth: ${userData["dob"] ?? "unknown"}',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    'Address: ${userData["address"] ?? "unknown"}',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    'Phone: ${userData["phone"] ?? "unknown"}',
-                    style: TextStyle(fontSize: 16),
-                  ),
+                  // User Info in Separate Rows with Lines
+                  buildInfoRow(Icons.email, 'Email', userData["email"]),
+                  buildInfoRow(Icons.work, 'Work', userData["work"] ?? "unknown"),
+                  buildInfoRow(Icons.cake, 'Date of Birth', userData["dob"] ?? "unknown"),
+                  buildInfoRow(Icons.home, 'Address', userData["address"] ?? "unknown"),
+                  buildInfoRow(Icons.phone, 'Phone', userData["phone"] ?? "unknown"),
+                  Divider(color: Colors.grey,),
+
                   const SizedBox(height: 20),
                   // Buttons
                   Row(
@@ -183,6 +175,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
                           }
 
                           return ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.lightBlue,
+                            ),
                             onPressed: () {
                               Navigator.push(
                                 context,
@@ -193,11 +188,17 @@ class _UserProfilePageState extends State<UserProfilePage> {
                                 ),
                               );
                             },
-                            child: Text("Chat"),
+                            child: Text(
+                              "Chat",
+                              style: TextStyle(color: Colors.white),
+                            ),
                           );
                         },
                       ),
                       ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.lightBlue,
+                        ),
                         onPressed: () => handleFriendAction(context),
                         child: Text(
                           relationshipStatus == 'add'
@@ -209,6 +210,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
                               : relationshipStatus == 'accept'
                               ? 'Accept Request'
                               : 'Decline Request',
+                          style: TextStyle(color: Colors.white),
+
                         ),
                       ),
                     ],
@@ -218,6 +221,34 @@ class _UserProfilePageState extends State<UserProfilePage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget buildInfoRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 16),
+              const SizedBox(width: 8),
+              Text(
+                '$label:',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  value,
+                  style: TextStyle(fontSize: 14),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

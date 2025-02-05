@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:strong_chat/pages/contacts/UserProfilePage.dart';
 import 'package:strong_chat/services/AuthService.dart';
 import 'package:strong_chat/services/FireStoreService.dart';
 import 'package:strong_chat/services/StorageService.dart';
@@ -382,65 +383,60 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Container(
-                color: themeProvider.themeMode == ThemeMode.dark
-                    ? Colors.grey[850]
-                    : Colors.white, // Slightly lighter black background
-                width: double.infinity, // Full width
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    Stack(
-                      children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundImage: _avatarUrl != null
-                              ? NetworkImage(_avatarUrl!)
-                              : AssetImage(
-                              'assets/loading.png') as ImageProvider,
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: GestureDetector(
-                            onTap: _editProfilePicture,
-                            child: CircleAvatar(
-                              backgroundColor: Colors.blue,
-                              radius: 10,
-                              child: Icon(
-                                  Icons.edit, size: 14, color: Colors.white),
-                            ),
+              GestureDetector(
+                onTap: () async {
+                  final userId = _authService.getCurrentUserId();
+                  final userData = await  _fireStoreService.getUserInfo(userId);
+                  // Navigator.push(
+                  //   context,
+                  //   MaterialPageRoute(
+                  //     builder: (context) =>
+                  //         UserProfilePage(userData:  userData!)
+                  //   ),
+                  // );
+                },
+                child: Container(
+                  color: themeProvider.themeMode == ThemeMode.dark
+                      ? Colors.grey[850]
+                      : Colors.white, // Slightly lighter black background
+                  width: double.infinity, // Full width
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 30,
+                            backgroundImage: _avatarUrl != null
+                                ? NetworkImage(_avatarUrl!)
+                                : AssetImage(
+                                'assets/loading.png') as ImageProvider,
                           ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(width: 8),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              _userName,
-                              style: TextStyle(
-                                  fontSize: 24, fontWeight: FontWeight.bold),
-                            ),
-                            SizedBox(width: 8),
-                            GestureDetector(
-                              onTap: _editName,
-                              child: Icon(
-                                  Icons.edit, size: 20, color: Colors.blue),
-                            ),
-                          ],
-                        ),
-                        Text(
-                          _userEmail,
-                          style: TextStyle(fontSize: 18, color: Colors
-                              .grey[600]),
-                        ),
-                      ],
-                    )
-                  ],
+                        ],
+                      ),
+                      SizedBox(width: 8),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                _userName,
+                                style: TextStyle(
+                                    fontSize: 24, fontWeight: FontWeight.bold),
+                              ),
+                              SizedBox(width: 8),
+                            ],
+                          ),
+                          Text(
+                            _userEmail,
+                            style: TextStyle(fontSize: 18, color: Colors
+                                .grey[600]),
+                          ),
+                        ],
+                      )
+                    ],
+                  ),
                 ),
               ),
               SizedBox(height: 10),
@@ -504,9 +500,7 @@ class _ProfilePageState extends State<ProfilePage> {
           onTap: onTap,
           child: Container(
             color: Colors.transparent,
-            // Transparent to let the parent container's color show through
             width: double.infinity,
-            // Full width
             padding: const EdgeInsets.fromLTRB(0, 16, 8, 16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

@@ -532,6 +532,7 @@ class _ChatPageState extends State<ChatPage> {
                     allMessages: allMessages,
                     userName: userName,
                     userAvatar: userAvatar,
+                    mediaItem: mediaItems,
                   ),
                 ),
               );

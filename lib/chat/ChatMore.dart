@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:strong_chat/chat/Media/FullScreenMediaView.dart';
+import 'package:strong_chat/chat/MediaGridPage.dart';
 import 'package:strong_chat/services/AuthService.dart';
 import 'package:strong_chat/services/FireStoreService.dart';
 import 'package:strong_chat/services/FriendService.dart';
@@ -16,6 +18,7 @@ class ChatMore extends StatefulWidget {
   final List<Map<String, dynamic>> allMessages;
   final String userName;
   final String userAvatar;
+  final List<MediaItem> mediaItem;
 
   const ChatMore({
     Key? key,
@@ -23,6 +26,7 @@ class ChatMore extends StatefulWidget {
     required this.allMessages,
     required this.userName,
     required this.userAvatar,
+    required this.mediaItem
   }) : super(key: key);
 
   @override
@@ -141,6 +145,22 @@ class _ChatMoreState extends State<ChatMore> {
                           fireStoreService: FireStoreService())
                           .showChangeNicknameDialog(
                           context, widget.friendData);
+                    },
+                    showDivider: true,
+                  ),
+                  _buildSection(
+                    context: context,
+                    title: 'Media Items',
+                    icon: Icons.perm_media,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => MediaGridPage(
+                            mediaItems: widget.mediaItem,
+                          ),
+                        ),
+                      );
                     },
                     showDivider: true,
                   ),
