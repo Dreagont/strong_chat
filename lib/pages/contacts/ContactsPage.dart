@@ -66,14 +66,17 @@ class _ContactsPageState extends State<ContactsPage> {
                         color: Colors.red,
                         shape: BoxShape.circle,
                       ),
-                      child: Text(
-                        requestCount.toString(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                      child: Center(
+                        child: Text(
+                          requestCount.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                    ),
+                    )
+
                 ],
               ),
             ),

@@ -34,7 +34,8 @@ class _LoginPageState extends State<LoginPage> {
 
     await Future.delayed(Duration(seconds: 1));
 
-    final user = await _authService.loginUserWithEmailAndPassword(email, password);
+    final user =
+        await _authService.loginUserWithEmailAndPassword(email, password);
 
     Navigator.pop(context);
 
@@ -45,14 +46,9 @@ class _LoginPageState extends State<LoginPage> {
         MaterialPageRoute(builder: (context) => HomeScreen(id: user.uid)),
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Login failed')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Login failed')));
     }
-  }
-
-  void _quickLogin(String email, String password) {
-    _emailController.text = email;
-    _passwordController.text = password;
-    _login();
   }
 
   void _forgotPassword() async {
@@ -74,7 +70,8 @@ class _LoginPageState extends State<LoginPage> {
               child: Text('Cancel'),
             ),
             TextButton(
-              onPressed: () => Navigator.of(context).pop(emailController.text.trim()),
+              onPressed: () =>
+                  Navigator.of(context).pop(emailController.text.trim()),
               child: Text('Send Reset Link'),
             ),
           ],
@@ -115,11 +112,65 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Strong Chat')),
-      body: Padding(
+      backgroundColor: Colors.white,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth < 600) {
+            return _buildMobileLayout();
+          } else {
+            return _buildWebLayout();
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildMobileLayout() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            "Strong Chat",
+            style: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              color: Colors.blueAccent,
+            ),
+          ),
+          SizedBox(height: 40),
+          _buildEmailField(),
+          SizedBox(height: 16),
+          _buildPasswordField(),
+          SizedBox(height: 20),
+          _buildLoginButton(),
+          _buildRegisterButton(),
+          _buildForgotPasswordButton(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWebLayout() {
+    return Center(
+      child: Container(
+        width: 500,
+        height: 700,
         padding: const EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 10,
+            ),
+          ],
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               "Strong Chat",
@@ -130,87 +181,93 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
             SizedBox(height: 40),
-            TextField(
-              controller: _emailController,
-              decoration: InputDecoration(
-                hintText: 'Email',
-                prefixIcon: Icon(Icons.email),
-                filled: true,
-                fillColor: Colors.grey[200],
-                border: OutlineInputBorder(
-                  borderSide: BorderSide.none,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              keyboardType: TextInputType.emailAddress,
-            ),
+            _buildEmailField(),
             SizedBox(height: 16),
-            TextField(
-              controller: _passwordController,
-              decoration: InputDecoration(
-                hintText: 'Password',
-                prefixIcon: Icon(Icons.lock),
-                filled: true,
-                fillColor: Colors.grey[200],
-                border: OutlineInputBorder(
-                  borderSide: BorderSide.none,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              obscureText: true,
-              onSubmitted: (_) => _login(),
-            ),
+            _buildPasswordField(),
             SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _login,
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: Colors.blueAccent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: Text(
-                  'Login',
-                  style: TextStyle(fontSize: 18),
-                ),
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton(
-                  onPressed: () => _quickLogin('huong@gmail.com', '123456'),
-                  child: Text('Quick Login huong'),
-                ),
-                ElevatedButton(
-                  onPressed: () => _quickLogin('huynhannguyen222@gmail.com', '123456'),
-                  child: Text('Quick Login nguyen222'),
-                ),
-                ElevatedButton(
-                  onPressed: () => _quickLogin('mvm@gmail.com', '123456'),
-                  child: Text('Quick Login MVM'),
-                ),
-              ],
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => RegisterPage()),
-                );
-              },
-              child: Text('Register'),
-            ),
-            TextButton(
-              onPressed: _forgotPassword,
-              child: Text('Forgot Password'),
-            ),
+            _buildLoginButton(),
+            SizedBox(height: 10),
+            _buildRegisterButton(),
+            _buildForgotPasswordButton(),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildEmailField() {
+    return TextField(
+      controller: _emailController,
+      style: TextStyle(color: Colors.black),
+      decoration: InputDecoration(
+        hintText: 'Email',
+        prefixIcon: Icon(Icons.email),
+        filled: true,
+        fillColor: Colors.grey[200],
+        border: OutlineInputBorder(
+          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+      keyboardType: TextInputType.emailAddress,
+    );
+  }
+
+  Widget _buildPasswordField() {
+    return TextField(
+      controller: _passwordController,
+      style: TextStyle(color: Colors.black),
+      decoration: InputDecoration(
+        hintText: 'Password',
+        prefixIcon: Icon(Icons.lock),
+        filled: true,
+        fillColor: Colors.grey[200],
+        border: OutlineInputBorder(
+          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+      obscureText: true,
+      onSubmitted: (_) => _login(),
+    );
+  }
+
+  Widget _buildLoginButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: _login,
+        style: ElevatedButton.styleFrom(
+          padding: EdgeInsets.symmetric(vertical: 16),
+          backgroundColor: Colors.blueAccent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+        child: Text(
+          'Login',
+          style: TextStyle(fontSize: 18, color: Colors.white),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRegisterButton() {
+    return TextButton(
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => RegisterPage()),
+        );
+      },
+      child: Text('Register', style: TextStyle(color: Colors.blueAccent),),
+    );
+  }
+
+  Widget _buildForgotPasswordButton() {
+    return TextButton(
+      onPressed: _forgotPassword,
+      child: Text('Forgot Password', style: TextStyle(color: Colors.blueAccent)),
     );
   }
 }

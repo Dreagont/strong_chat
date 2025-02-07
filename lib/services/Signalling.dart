@@ -86,7 +86,7 @@ class Signaling {
 
     try {
       peerConnection = await createPeerConnection(configuration);
-      registerPeerConnectionListeners();
+      registerPeerConnectionListeners(remoteRenderer,localRenderer,context,callerId,calleeId, false);
 
       localStream?.getTracks().forEach((track) {
         peerConnection?.addTrack(track, localStream!);
@@ -184,7 +184,7 @@ class Signaling {
       var roomSnapshot = await roomRef.get();
       if (roomSnapshot.exists) {
         peerConnection = await createPeerConnection(configuration);
-        registerPeerConnectionListeners();
+        registerPeerConnectionListeners(remoteVideo,localRenderer,context,callerId,calleeId,true);
 
         localStream?.getTracks().forEach((track) {
           peerConnection?.addTrack(track, localStream!);
@@ -333,7 +333,7 @@ class Signaling {
     }
   }
 
-  void registerPeerConnectionListeners() {
+  void registerPeerConnectionListeners(RTCVideoRenderer remoteVideo, RTCVideoRenderer localRenderer, BuildContext context, String callerId, String calleeId, bool hangupPerson) {
     peerConnection?.onIceGatheringState = (RTCIceGatheringState state) {
       print('ICE gathering state: $state');
     };
@@ -347,7 +347,7 @@ class Signaling {
 
       if (state == RTCPeerConnectionState.RTCPeerConnectionStateClosed ||
           state == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected) {
-        _stopCallTimer();
+        hangUp(localRenderer, callerId, calleeId, true, context, false, '', 'disconnected', hangupPerson);
       }
     };
 
