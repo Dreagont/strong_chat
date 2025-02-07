@@ -261,91 +261,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  void _editProfilePicture() async {
-    showLoadingDialog(context);
-    await storageService.uploadAvatar(
-        _authService.getCurrentUserId(), 'avatars');
-    Navigator.of(context).pop();
-    _loadUserData();
-    setState(() {});
-  }
-
-  void _editName() async {
-    final TextEditingController nameController = TextEditingController(
-      text: _userName,
-    );
-
-    final newName = await showDialog<String>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Row(
-            children: [
-              Icon(Icons.person_rounded, color: Theme.of(context).primaryColor),
-              SizedBox(width: 10),
-              Text('Edit Name'),
-            ],
-          ),
-          content: TextField(
-            controller: nameController,
-            maxLength: 30,
-            decoration: InputDecoration(
-              labelText: 'Enter new name',
-              counterText: '',
-              prefixIcon: Icon(Icons.text_fields),
-              helperText: 'Name must be between 2-30 characters',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(null),
-              child: Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                final trimmedName = nameController.text.trim();
-                if (trimmedName.length >= 2) {
-                  Navigator.of(context).pop(trimmedName);
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Name must be at least 2 characters long'),
-                    ),
-                  );
-                }
-              },
-              child: Text('Confirm'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (newName != null && newName.isNotEmpty && newName != _userName) {
-      showLoadingDialog(context);
-      try {
-        await _fireStoreService.updateUserName(
-            _authService.getCurrentUserId(),
-            newName
-        );
-
-        setState(() {
-          _userName = newName;
-        });
-
-        Navigator.of(context).pop(); // Dismiss loading dialog
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Name updated successfully')),
-        );
-      } catch (e) {
-        Navigator.of(context).pop(); // Dismiss loading dialog
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error updating name: ${e.toString()}')),
-        );
-      }
-    }
-  }
-
   void _navigateToMyQRCodePage(BuildContext context) {
     Navigator.push(
       context,
@@ -385,15 +300,30 @@ class _ProfilePageState extends State<ProfilePage> {
             children: <Widget>[
               GestureDetector(
                 onTap: () async {
-                  final userId = _authService.getCurrentUserId();
-                  final userData = await  _fireStoreService.getUserInfo(userId);
-                  // Navigator.push(
-                  //   context,
-                  //   MaterialPageRoute(
-                  //     builder: (context) =>
-                  //         UserProfilePage(userData:  userData!)
-                  //   ),
-                  // );
+                  final userData = {
+                    'id': _authService.getCurrentUserId(),
+                    'name': _userName,
+                    'email': _userEmail,
+                    'avatar': _avatarUrl,
+                    'work': _work,
+                    'dob': _dob,
+                    'address': _address,
+                    'phone': _phone,
+                  };
+
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => UserProfilePage(
+                        userData: userData,
+                        isCurrentUser: true,
+                      ),
+                    ),
+                  );
+
+                  if (result == true) {
+                    _loadUserData();
+                  }
                 },
                 child: Container(
                   color: themeProvider.themeMode == ThemeMode.dark
@@ -526,7 +456,6 @@ class _ProfilePageState extends State<ProfilePage> {
           Row(
             children: [
               SizedBox(width: 40),
-              // Adjust this width to match the icon's width plus margin
               Expanded(
                 child: Divider(thickness: 1.0, color: Colors.grey[600]),
               ),

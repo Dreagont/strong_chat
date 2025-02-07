@@ -90,22 +90,22 @@ class StorageService with ChangeNotifier {
     }
   }
 
-
-  Future<void> uploadAvatar(String userId, String path) async {
+  Future<String> uploadAvatar(String userId, String path) async {
     isUploading = true;
     notifyListeners();
 
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    String imageUrl = '';
 
     if (image == null) {
       isUploading = false;
       notifyListeners();
-      return;
+      return '';
     }
 
     try {
-      Uint8List imageBytes = await image.readAsBytes(); // Use `readAsBytes` for both web and mobile
+      Uint8List imageBytes = await image.readAsBytes();
       img.Image? originalImage = img.decodeImage(imageBytes);
       if (originalImage == null) throw Exception("Failed to decode image.");
 
@@ -133,16 +133,18 @@ class StorageService with ChangeNotifier {
         await firebaseStorage.ref(filePath).putFile(tempFile);
       }
 
-      String imageUrl = await firebaseStorage.ref(filePath).getDownloadURL();
+      imageUrl = await firebaseStorage.ref(filePath).getDownloadURL();
       _fireStoreService.updateUserAvatar(userId, imageUrl);
       notifyListeners();
     } catch (e) {
-      print(e);
+      print("Error uploading avatar: $e");
     } finally {
       isUploading = false;
       notifyListeners();
+      return imageUrl.toString();
     }
   }
+
 
   Future<void> uploadImage(XFile image, String timeStamp, String path, String fullFileName) async {
     isUploading = true;

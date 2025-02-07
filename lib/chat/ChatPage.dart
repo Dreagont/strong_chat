@@ -378,8 +378,8 @@ class _ChatPageState extends State<ChatPage> {
               message['message'],
               style: TextStyle(
                 color: ThemeProvider().themeMode == ThemeMode.dark
-                    ? Colors.white70
-                    : Colors.black87,
+                    ? Colors.white
+                    : Colors.black,
               ),
             ),
             onTap: () => scrollToMessage(message),

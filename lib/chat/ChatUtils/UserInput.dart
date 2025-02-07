@@ -115,11 +115,25 @@ class _UserInputState extends State<UserInput> {
                     onEmojiSelected: (category, emoji) => onEmojiSelected(category, emoji),
                     config: Config(
                       height: 256,
+                      emojiViewConfig: EmojiViewConfig(
+                        backgroundColor:  themeProvider.themeMode == ThemeMode.dark ? Colors.black : Colors.white,
+                      ),
                       checkPlatformCompatibility: false,
                       viewOrderConfig: const ViewOrderConfig(),
                       skinToneConfig: const SkinToneConfig(),
-                      categoryViewConfig: const CategoryViewConfig(),
-                      bottomActionBarConfig: const BottomActionBarConfig(),
+                      categoryViewConfig:  CategoryViewConfig(
+                        backgroundColor:  themeProvider.themeMode == ThemeMode.dark ? Colors.black : Colors.white,
+                      ),
+                      bottomActionBarConfig: const BottomActionBarConfig(
+                          backgroundColor: Colors.white,
+                          enabled: false
+
+                      ),
+                      searchViewConfig: const SearchViewConfig(
+                          backgroundColor: Colors.white,
+                          hintText : 'Search for emoji'
+
+                      )
                     ),
                   ),
                 ),

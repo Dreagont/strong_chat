@@ -612,8 +612,8 @@ class FireStoreService {
         }
         return data['notificationEnabled'] ?? false;
       } else {
-        docRef.set({'notificationEnabled': false}, SetOptions(merge: true));
-        return false;
+        docRef.set({'notificationEnabled': true}, SetOptions(merge: true));
+        return true;
       }
     });
   }
