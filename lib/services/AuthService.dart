@@ -57,15 +57,18 @@ class AuthService {
   }
 
 
-  Future<User?> loginUserWithEmailAndPassword(
-      String email, String password) async {
+  Future<User?> loginUserWithEmailAndPassword(String email, String password) async {
     try {
       final cred = await auth.signInWithEmailAndPassword(
           email: email, password: password);
       return cred.user;
+    } on FirebaseAuthException catch (e) {
+      throw e;
     } catch (e) {
-      log("Something went wrong");
-      return null;
+      throw FirebaseAuthException(
+        code: 'unknown',
+        message: 'An unexpected error occurred: ${e.toString()}',
+      );
     }
   }
 

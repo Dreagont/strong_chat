@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../pages/HomePage.dart';
 import '../services/AuthService.dart';
@@ -13,7 +14,7 @@ class _LoginPageState extends State<LoginPage> {
   final AuthService _authService = AuthService();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-
+  bool _isPasswordVisible = false;
   void _login() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
@@ -32,22 +33,55 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
 
-    await Future.delayed(Duration(seconds: 1));
+    try {
+      final user = await _authService.loginUserWithEmailAndPassword(email, password);
+      Navigator.pop(context); // Close loading dialog
 
-    final user =
-        await _authService.loginUserWithEmailAndPassword(email, password);
+      if (user != null) {
+        LocalNotificationService().uploadFcmToken();
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => HomeScreen(id: user.uid)),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      Navigator.pop(context); // Close loading dialog
 
-    Navigator.pop(context);
+      String errorMessage;
+      switch (e.code) {
+        case 'user-not-found':
+          errorMessage = 'No user found with this email';
+          break;
+        case 'wrong-password':
+          errorMessage = 'Incorrect password';
+          break;
+        case 'invalid-email':
+          errorMessage = 'Invalid email format';
+          break;
+        case 'user-disabled':
+          errorMessage = 'This account has been disabled';
+          break;
+        case 'too-many-requests':
+          errorMessage = 'Too many attempts. Please try again later';
+          break;
+        case 'network-request-failed':
+          errorMessage = 'Network error. Please check your connection';
+          break;
+        default:
+          errorMessage = e.message ?? 'An error occurred during login';
+      }
 
-    if (user != null) {
-      LocalNotificationService().uploadFcmToken();
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => HomeScreen(id: user.uid)),
-      );
-    } else {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Login failed')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.all(16),
+          ),
+        );
+      }
     }
   }
 
@@ -220,6 +254,17 @@ class _LoginPageState extends State<LoginPage> {
       decoration: InputDecoration(
         hintText: 'Password',
         prefixIcon: Icon(Icons.lock),
+        suffixIcon: IconButton(
+          icon: Icon(
+            _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+            color: Colors.grey,
+          ),
+          onPressed: () {
+            setState(() {
+              _isPasswordVisible = !_isPasswordVisible;
+            });
+          },
+        ),
         filled: true,
         fillColor: Colors.grey[200],
         border: OutlineInputBorder(
@@ -227,7 +272,7 @@ class _LoginPageState extends State<LoginPage> {
           borderRadius: BorderRadius.circular(8),
         ),
       ),
-      obscureText: true,
+      obscureText: !_isPasswordVisible,
       onSubmitted: (_) => _login(),
     );
   }

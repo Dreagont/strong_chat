@@ -24,18 +24,17 @@ class ChatManager {
 
   Future<void> toggleBlockUser(BuildContext context, String friendId) async {
     String currentUserId = authService.getCurrentUserId();
-    Stream<bool> blockedStream = fireStoreService.isBlockedHimStream(currentUserId, friendId);
+    bool isBlocked = await fireStoreService.isBlockedHim(currentUserId, friendId);
 
-    blockedStream.listen((isBlocked) {
-      String action = isBlocked ? "Unblock" : "Block";
-      String message = isBlocked ? "unblock this user" : "block this user";
+    String action = isBlocked ? "Unblock" : "Block";
+    String message = isBlocked ? "unblock this user" : "block this user";
 
-      _showConfirmationDialog(context, action, "Are you sure you want to $message?", () async {
-        await fireStoreService.blockActionUserForFriend(currentUserId, friendId);
-        _showSuccessSnackbar(context, "User ${action}ed successfully");
-      });
+    _showConfirmationDialog(context, action, "Are you sure you want to $message?", () async {
+      await fireStoreService.blockActionUserForFriend(currentUserId, friendId);
+      _showSuccessSnackbar(context, "User ${action}ed successfully");
     });
   }
+
 
   void _showConfirmationDialog(BuildContext context, String title, String message, VoidCallback onConfirm) {
     showDialog(

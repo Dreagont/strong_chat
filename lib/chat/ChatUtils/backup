@@ -1,229 +1,393 @@
-import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
-import '../../services/AuthService.dart';
-import '../../services/FireStoreService.dart';
-import '../../services/StorageService.dart';
-import 'package:strong_chat/pages/ChangeTheme.dart';
+import 'dart:async';
 
-class UserInput extends StatefulWidget {
-  final TextEditingController messController;
-  final FocusNode focusNode;
-  final String friendId;
-  final VoidCallback onMessageSent;
-  final VoidCallback sendTextMessage;
-  final VoidCallback sendImageMessage;
-  final VoidCallback sendVideoMessage;
-  final VoidCallback sendFileMessage;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:strong_chat/services/AuthService.dart';
+import 'package:strong_chat/services/FireStoreService.dart';
 
-  UserInput({
-    required this.messController,
-    required this.focusNode,
-    required this.friendId,
-    required this.onMessageSent,
-    required this.sendTextMessage,
-    required this.sendImageMessage,
-    required this.sendVideoMessage,
-    required this.sendFileMessage,
-  });
+typedef void StreamStateCallback(MediaStream stream);
+typedef void StreamRemoveCallback();
+typedef void CallDurationCallback(Duration duration);
 
-  @override
-  _UserInputState createState() => _UserInputState();
-}
-
-class _UserInputState extends State<UserInput> {
-
-
-  final FireStoreService chatService = FireStoreService();
-  final AuthService authService = AuthService();
-  final StorageService storageService = StorageService();
-
-  void _handleKeyEvent(RawKeyEvent event) {
-    if (event is RawKeyDownEvent) {
-      if (event.logicalKey == LogicalKeyboardKey.enter) {
-        if (event.isShiftPressed) {
-        } else {
-          widget.sendTextMessage();
-        }
+class Signaling {
+  Map<String, dynamic> configuration = {
+    'iceServers': [
+      {
+        'urls': [
+          'stun:stun1.l.google.com:19302',
+          'stun:stun2.l.google.com:19302'
+        ]
+      },
+      {
+        'urls': 'turn:relay1.expressturn.com:3478',
+        'username': 'efH7AGCE0TC92OMTXN',
+        'credential': 'dJhLxWSwBz01Deh6'
+      },
+      {
+        'urls': 'turn:relay1.expressturn.com:3478',
+        'username': 'efGEDLUYAY5WK8HNF1',
+        'credential': 'GMgJZWd0dtV7ydUr'
       }
+    ]
+  };
+
+
+  RTCPeerConnection? peerConnection;
+  MediaStream? localStream;
+  MediaStream? remoteStream;
+  String? roomId;
+  String? currentRoomText;
+  StreamStateCallback? onAddRemoteStream;
+  StreamRemoveCallback? onRemoveRemoteStream;
+  DateTime? _callStartTime;
+  DateTime? _callEndTime;
+  Timer? _durationTimer;
+  CallDurationCallback? onCallDurationUpdate;
+  Duration _currentCallDuration = Duration.zero;
+  Duration get currentCallDuration => _currentCallDuration;
+
+  Future<void> startCamera(RTCVideoRenderer localVideo) async {
+    if (localStream != null) {
+      localStream?.getVideoTracks().forEach((track) {
+        track.enabled = true;
+      });
+      localVideo.srcObject = localStream;
     }
   }
-  bool isEmojiVisible = false;
-  final FocusNode _emojiPickerFocus = FocusNode();
 
-  void onEmojiSelected(Category? category, Emoji emoji) {
-    widget.messController.text = widget.messController.text + emoji.emoji;
+  Future<void> stopCamera() async {
+    if (localStream != null) {
+      localStream?.getVideoTracks().forEach((track) {
+        track.enabled = false;
+      });
+    }
   }
 
-  @override
-  void dispose() {
-    _emojiPickerFocus.dispose();
-    super.dispose();
+  Future<void> startMic() async {
+    if (localStream != null) {
+      localStream?.getAudioTracks().forEach((track) {
+        track.enabled = true;
+      });
+    }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final color = themeProvider.themeMode == ThemeMode.dark ? Colors.white : Colors.grey;
-    final backgroundColor = themeProvider.themeMode == ThemeMode.dark ? Colors.grey[900] : Colors.white;
-
-    return Container(
-      color: backgroundColor,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Visibility(
-            visible: isEmojiVisible,
-            child: SizedBox(
-              height: 250,
-              child: Focus(
-                focusNode: _emojiPickerFocus,
-                child: EmojiPicker(
-                  onEmojiSelected: (category, emoji) => onEmojiSelected(category, emoji),
-                  config: Config(
-                    columns: 7,
-                    emojiSizeMax: 32,
-                    verticalSpacing: 0,
-                    horizontalSpacing: 0,
-                    initCategory: Category.RECENT,
-                    bgColor: backgroundColor!,
-                    indicatorColor: Colors.blue,
-                    iconColor: color,
-                    iconColorSelected: Colors.blue,
-                    backspaceColor: color,
-                    skinToneDialogBgColor: Colors.white,
-                    skinToneIndicatorColor: Colors.grey,
-                    enableSkinTones: true,
-                    recentsLimit: 28,
-                    noRecents: const Text('No Recent'),
-                    loadingIndicator: const SizedBox.shrink(),
-                    tabIndicatorAnimDuration: kTabScrollDuration,
-                    categoryIcons: const CategoryIcons(),
-                    buttonMode: ButtonMode.MATERIAL,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Container(
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              border: Border(
-                top: BorderSide(
-                  color: Colors.grey.withOpacity(0.2),
-                ),
-              ),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                IconButton(
-                  color: color,
-                  icon: const Icon(Icons.attach_file),
-                  onPressed: () => showMediaOptions(context),
-                ),
-                IconButton(
-                  color: color,
-                  icon: Icon(isEmojiVisible ? Icons.keyboard : Icons.emoji_emotions),
-                  onPressed: () {
-                    setState(() {
-                      isEmojiVisible = !isEmojiVisible;
-                    });
-                    if (isEmojiVisible) {
-                      FocusScope.of(context).requestFocus(_emojiPickerFocus);
-                      widget.focusNode.unfocus();
-                    } else {
-                      FocusScope.of(context).requestFocus(widget.focusNode);
-                    }
-                  },
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: TextFormField(
-                      controller: widget.messController,
-                      focusNode: widget.focusNode,
-                      maxLines: 5,
-                      minLines: 1,
-                      textInputAction: TextInputAction.newline,
-                      keyboardType: TextInputType.multiline,
-                      onTap: () {
-                        if (isEmojiVisible) {
-                          setState(() {
-                            isEmojiVisible = false;
-                          });
-                        }
-                      },
-                      decoration: const InputDecoration(
-                        hintText: "Type your message",
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        isDense: true,
-                      ),
-                    ),
-                  ),
-                ),
-                IconButton(
-                  color: color,
-                  onPressed: widget.sendTextMessage,
-                  icon: const Icon(Icons.send),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+  Future<void> stopMic() async {
+    if (localStream != null) {
+      localStream?.getAudioTracks().forEach((track) {
+        track.enabled = false;
+      });
+    }
   }
 
-  void showMediaOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildMediaOption(
-                context,
-                Icons.image,
-                'Image',
-                widget.sendImageMessage,
+  Future<String> createRoom(RTCVideoRenderer remoteRenderer, RTCVideoRenderer localRenderer, BuildContext context,String callerId, String calleeId) async {
+    FirebaseFirestore db = FirebaseFirestore.instance;
+    DocumentReference roomRef = db.collection('rooms').doc();
+
+    try {
+      peerConnection = await createPeerConnection(configuration);
+      registerPeerConnectionListeners();
+
+      localStream?.getTracks().forEach((track) {
+        peerConnection?.addTrack(track, localStream!);
+      });
+
+      var callerCandidatesCollection = roomRef.collection('callerCandidates');
+      peerConnection?.onIceCandidate = (RTCIceCandidate candidate) {
+        if (candidate != null) {
+          callerCandidatesCollection.add(candidate.toMap());
+        }
+      };
+
+      RTCSessionDescription offer = await peerConnection!.createOffer();
+      await peerConnection!.setLocalDescription(offer);
+
+      Map<String, dynamic> roomWithOffer = {'offer': offer.toMap()};
+      await roomRef.set(roomWithOffer);
+
+      roomId = roomRef.id;
+      currentRoomText = 'Current room is $roomId - You are the caller!';
+      print(currentRoomText);
+
+      remoteStream = await createLocalMediaStream('remoteStream');
+      peerConnection?.onTrack = (RTCTrackEvent event) {
+        if (event.streams.isNotEmpty) {
+          remoteRenderer.srcObject = event.streams[0];
+          remoteStream = event.streams[0];
+          onAddRemoteStream?.call(event.streams[0]);
+        }
+      };
+
+      roomRef.snapshots().listen((snapshot) async {
+        if (snapshot.data() != null) {
+          Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
+          if ((await peerConnection?.getRemoteDescription()) == null &&
+              data['answer'] != null) {
+            var answer = RTCSessionDescription(
+              data['answer']['sdp'],
+              data['answer']['type'],
+            );
+            await peerConnection?.setRemoteDescription(answer);
+          }
+        }
+      });
+
+      roomRef.collection('calleeCandidates').snapshots().listen((snapshot) {
+        snapshot.docChanges.forEach((change) {
+          if (change.type == DocumentChangeType.added) {
+            Map<String, dynamic> data = change.doc.data() as Map<String, dynamic>;
+            peerConnection?.addCandidate(
+              RTCIceCandidate(
+                data['candidate'],
+                data['sdpMid'],
+                data['sdpMLineIndex'],
               ),
-              _buildMediaOption(
-                context,
-                Icons.video_library,
-                'Video',
-                widget.sendVideoMessage,
-              ),
-              _buildMediaOption(
-                context,
-                Icons.insert_drive_file,
-                'File',
-                widget.sendFileMessage,
-              ),
-            ],
-          ),
+            );
+          }
+        });
+      });
+
+      roomRef.snapshots().listen((snapshot) {
+        if (snapshot.data() != null) {
+          Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
+          if (data['declined'] == true) {
+            print("decline from callee");
+            hangUp(localRenderer, callerId, calleeId, true, context, false,"",'declined',true);
+            //false là để thông báo nó là hangup hay declined
+            // còn true ở cuối để thông báo ai là người tắt true là caller còn false là callee
+          }
+        }
+      });
+
+      roomRef.snapshots().listen((snapshot) {
+        if (snapshot.data() != null) {
+          Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
+          if (data['hangUpFromCallee'] == true) {
+            print("Hang up from Callee");
+            hangUp(localRenderer, callerId, calleeId, true, context, true,"",'hangUpFromCallee',false);
+          }
+        }
+      });
+
+      return roomId!;
+    } catch (e) {
+      print('Error creating room: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> joinRoom(String RoomId, RTCVideoRenderer remoteVideo, RTCVideoRenderer localRenderer, BuildContext context, String callerId, String calleeId) async {
+    FirebaseFirestore db = FirebaseFirestore.instance;
+    DocumentReference roomRef = db.collection('rooms').doc(RoomId);
+
+    try {
+      var roomSnapshot = await roomRef.get();
+      if (roomSnapshot.exists) {
+        peerConnection = await createPeerConnection(configuration);
+        registerPeerConnectionListeners();
+
+        localStream?.getTracks().forEach((track) {
+          peerConnection?.addTrack(track, localStream!);
+        });
+
+        var calleeCandidatesCollection = roomRef.collection('calleeCandidates');
+        peerConnection!.onIceCandidate = (RTCIceCandidate? candidate) {
+          if (candidate != null) {
+            calleeCandidatesCollection.add(candidate.toMap());
+          }
+        };
+
+        remoteStream = await createLocalMediaStream('remoteStream');
+        peerConnection?.onTrack = (RTCTrackEvent event) {
+          if (event.streams.isNotEmpty) {
+            remoteVideo.srcObject = event.streams[0];
+            remoteStream = event.streams[0];
+            onAddRemoteStream?.call(event.streams[0]);
+          }
+        };
+
+        var data = roomSnapshot.data() as Map<String, dynamic>;
+        var offer = data['offer'];
+        await peerConnection?.setRemoteDescription(
+          RTCSessionDescription(offer['sdp'], offer['type']),
         );
-      },
-    );
+
+        var answer = await peerConnection!.createAnswer();
+        await peerConnection!.setLocalDescription(answer);
+
+        Map<String, dynamic> roomWithAnswer = {
+          'answer': {'type': answer.type, 'sdp': answer.sdp}
+        };
+        await roomRef.update(roomWithAnswer);
+
+        roomRef.collection('callerCandidates').snapshots().listen((snapshot) {
+          snapshot.docChanges.forEach((change) {
+            if (change.type == DocumentChangeType.added) {
+              Map<String, dynamic> data = change.doc.data() as Map<String, dynamic>;
+              peerConnection!.addCandidate(
+                RTCIceCandidate(
+                  data['candidate'],
+                  data['sdpMid'],
+                  data['sdpMLineIndex'],
+                ),
+              );
+            }
+          });
+        });
+
+        roomRef.snapshots().listen((snapshot) {
+          if (snapshot.data() != null) {
+            Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
+            if (data['hangUpFromCaller'] == true) {
+              print("Hang up from caller");
+              hangUp(localRenderer, callerId , calleeId, true, context, true,RoomId,'hangUpFromCaller',true);
+            }
+          }
+        });
+      }
+    } catch (e) {
+      print('Error joining room: $e');
+      rethrow;
+    }
   }
 
-  Widget _buildMediaOption(
-      BuildContext context,
-      IconData icon,
-      String title,
-      VoidCallback onTap,
-      ) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      onTap: () {
-        Navigator.pop(context);
-        onTap();
-      },
-    );
+  Future<void> openUserMedia(
+      RTCVideoRenderer localVideo, RTCVideoRenderer remoteVideo) async {
+    try {
+      var stream = await navigator.mediaDevices.getUserMedia({
+        'video': true,
+        'audio': true
+      });
+
+      localVideo.srcObject = stream;
+      localStream = stream;
+
+      remoteVideo.srcObject = null;
+    } catch (e) {
+      print('Error opening user media: $e');
+    }
   }
+
+  String formatDuration(int milliseconds) {
+    int totalSeconds = milliseconds ~/ 1000;
+    int hours = totalSeconds ~/ 3600;
+    int minutes = (totalSeconds % 3600) ~/ 60;
+    int secs = totalSeconds % 60;
+
+    if (hours > 0) {
+      return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+    } else {
+      return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+    }
+  }
+
+
+  Future<void> hangUp(
+      RTCVideoRenderer localVideo, String callerId, String calleeId,
+      bool isMine, BuildContext context, bool isHangUp,
+      String RoomId, String Call, bool hangupPerson) async {
+    try {
+      _stopCallTimer();
+      print('Final Call Duration: ${(_currentCallDuration.inSeconds)}');
+
+      if (callerId == AuthService().getCurrentUserId() && isMine) {
+        if (Call == 'declined' || _currentCallDuration.inMilliseconds == 0) {
+          FireStoreService().sendMessage(calleeId, 'Missing Call', 'call', '');
+        } else {
+          FireStoreService().sendMessage(calleeId, formatDuration(_currentCallDuration.inMilliseconds), 'call', '');
+        }
+      }
+
+      localVideo.srcObject?.getTracks().forEach((track) => track.stop());
+      remoteStream?.getTracks().forEach((track) => track.stop());
+      peerConnection?.close();
+
+      if (onRemoveRemoteStream != null) {
+        onRemoveRemoteStream!();
+      }
+
+      if(isHangUp){
+        if(hangupPerson)   //true là caller  thông báo cho thằng callee biết
+        {
+          if (roomId != null && roomId != "") {
+            FirebaseFirestore db = FirebaseFirestore.instance;
+            var roomRef = db.collection('rooms').doc(roomId);
+            await roomRef.update({'hangUpFromCaller': isHangUp});
+          }
+        }
+        if(!hangupPerson) //false là callee thông báo cho thằng caller biết
+        {
+          if(RoomId != null && RoomId != ""){
+            FirebaseFirestore db = FirebaseFirestore.instance;
+            var roomRef = db.collection('rooms').doc(RoomId);
+            await roomRef.update({'hangUpFromCallee': isHangUp});
+          }
+        }
+      }
+      localStream?.dispose();
+      remoteStream?.dispose();
+
+      Navigator.pop(context);
+    } catch (e) {
+      print('Error hanging up: $e');
+    }
+  }
+
+  void registerPeerConnectionListeners() {
+    peerConnection?.onIceGatheringState = (RTCIceGatheringState state) {
+      print('ICE gathering state: $state');
+    };
+
+    peerConnection?.onConnectionState = (RTCPeerConnectionState state) {
+      print('Connection state: $state');
+
+      if (state == RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
+        _startCallTimer();
+      }
+
+      if (state == RTCPeerConnectionState.RTCPeerConnectionStateClosed ||
+          state == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected) {
+        _stopCallTimer();
+      }
+    };
+
+    peerConnection?.onSignalingState = (RTCSignalingState state) {
+      print('Signaling state: $state');
+    };
+
+    peerConnection?.onAddStream = (MediaStream stream) {
+      onAddRemoteStream?.call(stream);
+      remoteStream = stream;
+    };
+
+    peerConnection?.onRemoveStream = (MediaStream stream) {
+      if (remoteStream != null && remoteStream!.id == stream.id) {
+        remoteStream = null;
+        if (onRemoveRemoteStream != null) {
+          onRemoveRemoteStream!();
+        }
+      }
+    };
+  }
+
+  void _startCallTimer() {
+    print('start');
+    _callStartTime = DateTime.now();
+    _durationTimer = Timer.periodic(Duration(milliseconds: 1), (timer) {
+      if (_callStartTime != null) {
+        _currentCallDuration = DateTime.now().difference(_callStartTime!);
+        onCallDurationUpdate?.call(_currentCallDuration);
+      }
+    });
+  }
+
+  void _stopCallTimer() {
+    print('stop');
+    _durationTimer?.cancel();
+    _callEndTime = DateTime.now();
+    if (_callStartTime != null) {
+      _currentCallDuration = _callEndTime!.difference(_callStartTime!);
+    }
+  }
+
 }

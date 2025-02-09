@@ -402,52 +402,6 @@ class _MessageBoxWithDataState extends State<MessageBoxWithData> {
                         ),
                       ),
                     ],
-                    if (widget.data['message'] == 'Missing Call')
-                      StreamBuilder<String?>(
-                        stream: FireStoreService().getUserTokenStream(widget.friendData['id']),
-                        builder: (context, snapshot) {
-                          final userToken = snapshot.connectionState == ConnectionState.active && snapshot.hasData
-                              ? snapshot.data
-                              : null;
-
-                          return Padding(
-                            padding: EdgeInsets.only(top: 8),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  "Callback",
-                                  style: TextStyle(
-                                    color: Colors.red.shade700,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                Row(
-                                  children: [
-                                    _buildCallBackButton(
-                                      context,
-                                      icon: Icons.call_outlined,
-                                      isVoice: true,
-                                      userToken: userToken,
-                                      friendData: widget.friendData,
-                                      userId: userId,
-                                    ),
-                                    SizedBox(width: 8),
-                                    _buildCallBackButton(
-                                      context,
-                                      icon: Icons.videocam_outlined,
-                                      isVoice: false,
-                                      userToken: userToken,
-                                      friendData: widget.friendData,
-                                      userId: userId,
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
                   ],
                 ),
               ),

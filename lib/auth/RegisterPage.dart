@@ -81,6 +81,10 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
+  bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
+
+
   Widget _buildTextField({
     required TextEditingController controller,
     required String hintText,
@@ -88,15 +92,23 @@ class _RegisterPageState extends State<RegisterPage> {
     TextInputType keyboardType = TextInputType.text,
     bool obscureText = false,
     VoidCallback? onTap,
+    bool? isPassword,
+    bool? isConfirmPassword,
+    int? maxLength = 20,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: AbsorbPointer(
         absorbing: onTap != null,
         child: TextField(
+          maxLength: maxLength,
           controller: controller,
           keyboardType: keyboardType,
-          obscureText: obscureText,
+          obscureText: isPassword == true
+              ? !_isPasswordVisible
+              : isConfirmPassword == true
+              ? !_isPasswordVisible
+              : obscureText,
           style: TextStyle(color: Colors.black),
           decoration: InputDecoration(
             hintText: hintText,
@@ -105,6 +117,25 @@ class _RegisterPageState extends State<RegisterPage> {
               fontSize: 16,
             ),
             prefixIcon: icon != null ? Icon(icon) : null,
+            suffixIcon: (isPassword == true || isConfirmPassword == true)
+                ? IconButton(
+              icon: Icon(
+                ((_isPasswordVisible == true)
+                    ? Icons.visibility
+                    : Icons.visibility_off),
+                color: Colors.grey,
+              ),
+              onPressed: () {
+                setState(() {
+                  if (isPassword == true) {
+                    _isPasswordVisible = !_isPasswordVisible;
+                  } else {
+                    _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                  }
+                });
+              },
+            )
+                : null,
             filled: true,
             fillColor: Colors.grey[200],
             border: OutlineInputBorder(
@@ -116,6 +147,7 @@ class _RegisterPageState extends State<RegisterPage> {
       ),
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -166,14 +198,14 @@ class _RegisterPageState extends State<RegisterPage> {
             controller: _passwordController,
             hintText: 'Password',
             icon: Icons.lock,
-            obscureText: true,
+            isPassword: true,
           ),
           SizedBox(height: 10),
           _buildTextField(
             controller: _confirmPasswordController,
             hintText: 'Confirm Password',
             icon: Icons.lock,
-            obscureText: true,
+            isConfirmPassword: true,
           ),
           SizedBox(height: 20),
           ExpansionTile(
@@ -204,6 +236,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 hintText: 'Phone Number',
                 icon: Icons.phone,
                 keyboardType: TextInputType.phone,
+                maxLength: 10
               ),
             ],
           ),
@@ -282,14 +315,14 @@ class _RegisterPageState extends State<RegisterPage> {
               controller: _passwordController,
               hintText: 'Password',
               icon: Icons.lock,
-              obscureText: true,
+              isPassword: true,
             ),
             SizedBox(height: 10),
             _buildTextField(
               controller: _confirmPasswordController,
               hintText: 'Confirm Password',
               icon: Icons.lock,
-              obscureText: true,
+              isConfirmPassword: true,
             ),
             SizedBox(height: 20),
             ExpansionTile(
@@ -320,6 +353,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   hintText: 'Phone Number',
                   icon: Icons.phone,
                   keyboardType: TextInputType.phone,
+                  maxLength: 10
                 ),
               ],
             ),

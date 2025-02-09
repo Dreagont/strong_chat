@@ -136,23 +136,6 @@ class _ContactsPageState extends State<ContactsPage> {
         userData['name'],
         style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
       ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(
-            icon: const Icon(Icons.call_outlined),
-            onPressed: () {
-              // Handle voice call action
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.videocam_outlined),
-            onPressed: () {
-              // Handle video call action
-            },
-          ),
-        ],
-      ),
       onTap: () async {
         final result = await Navigator.push(
           context,

@@ -172,7 +172,6 @@ class _MessagesPageState extends State<MessagesPage> {
         authService: authService,
         fireStoreService: fireStoreService
     );
-
     switch (option) {
       case ChatOption.hide:
         _hideChatOptimistically(data['id']);

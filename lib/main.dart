@@ -88,7 +88,7 @@ class _MyAppState extends State<MyApp> {
                 },
               ),
             ).then((_) {
-              pendingCallPayload.value = null;  // 🔥 Set null AFTER navigation
+              pendingCallPayload.value = null;
             });
           } else {
             print("Navigator key is NULL, cannot push route");

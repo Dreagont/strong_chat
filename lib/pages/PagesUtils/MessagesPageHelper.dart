@@ -176,12 +176,12 @@ void _showOptionsBottomSheet(
                   ListTile(
                     leading: Icon(
                       isNotificationEnabled ? Icons.notifications_active : Icons.notifications_off,
-                      color: isNotificationEnabled ? Colors.green : Colors.red,
+                      color: isNotificationEnabled ? Colors.red : Colors.green,
                     ),
                     title: Text(
                       isNotificationEnabled ? "Disable Notifications" : "Enable Notifications",
                       style: TextStyle(
-                        color: isNotificationEnabled ? Colors.green : Colors.red,
+                        color: isNotificationEnabled ? Colors.red : Colors.green,
                       ),
                     ),
                     onTap: () {

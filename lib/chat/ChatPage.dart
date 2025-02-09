@@ -440,70 +440,96 @@ class _ChatPageState extends State<ChatPage> {
         actions: [
           StreamBuilder<String?>(
             stream: chatService.getUserTokenStream(widget.friendData['id']),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.active &&
-                  snapshot.hasData) {
-                userToken = snapshot.data;
+            builder: (context, tokenSnapshot) {
+              if (tokenSnapshot.connectionState == ConnectionState.active &&
+                  tokenSnapshot.hasData) {
+                userToken = tokenSnapshot.data;
               }
-              return Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.call_outlined),
-                    color: Colors.white,
-                    onPressed: () async {
-                      final name = await chatService.fetchUserName(userId);
-                      if (userToken != null) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => VideoCallPage(
-                              number: 1,
-                              notificationToken: userToken!,
-                              CaleeName: widget.friendData['name'],
-                              CallerName: name,
-                              roomId: '',
-                              isVoice: true,
-                              callerId: userId,
-                              calleeId: widget.friendData['id'],
-                              hangupPerson: true,
-                            ),
-                          ),
-                        );
-                      } else {
-                        debugPrint('Token is not available');
-                      }
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.videocam_outlined),
-                    color: Colors.white,
-                    onPressed: () async {
-                      final name = await chatService.fetchUserName(userId);
-                      if (userToken != null) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => VideoCallPage(
-                              number: 1,
-                              notificationToken: userToken!,
-                              CaleeName: widget.friendData['name'],
-                              CallerName: name,
-                              roomId: '',
-                              isVoice: false,
-                              callerId: userId,
-                              calleeId: widget.friendData['id'],
-                              hangupPerson: true,
-                            ),
-                          ),
-                        );
-                      } else {
-                        debugPrint('Token is not available');
-                      }
-                    },
-                  ),
 
-                ],
+              return StreamBuilder<bool>(
+                stream: chatService.getIsBlockedStream(
+                    authService.getCurrentUserId(),
+                    widget.friendData['id']
+                ),
+                builder: (context, blockedByThemSnapshot) {
+                  return StreamBuilder<bool>(
+                    stream: chatService.isBlockedHimStream(
+                        authService.getCurrentUserId(),
+                        widget.friendData['id']
+                    ),
+                    builder: (context, iBlockedThemSnapshot) {
+                      final bool blockedByThem = blockedByThemSnapshot.data ?? false;
+                      final bool iBlockedThem = iBlockedThemSnapshot.data ?? false;
+
+                      // Disable buttons if either user has blocked the other
+                      final bool callsDisabled = blockedByThem || iBlockedThem;
+
+                      return Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.call_outlined),
+                            color: callsDisabled ? Colors.grey : Colors.white,
+                            onPressed: callsDisabled
+                                ? null
+                                : () async {
+                              if (userToken != null) {
+                                final name = await chatService.fetchUserName(userId);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => VideoCallPage(
+                                      number: 1,
+                                      notificationToken: userToken!,
+                                      CaleeName: widget.friendData['name'],
+                                      CallerName: name,
+                                      roomId: '',
+                                      isVoice: true,
+                                      callerId: userId,
+                                      calleeId: widget.friendData['id'],
+                                      hangupPerson: true,
+                                    ),
+                                  ),
+                                );
+                              } else {
+                                debugPrint('Token is not available');
+                              }
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.videocam_outlined),
+                            color: callsDisabled ? Colors.grey : Colors.white,
+                            onPressed: callsDisabled
+                                ? null
+                                : () async {
+                              if (userToken != null) {
+                                final name = await chatService.fetchUserName(userId);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => VideoCallPage(
+                                      number: 1,
+                                      notificationToken: userToken!,
+                                      CaleeName: widget.friendData['name'],
+                                      CallerName: name,
+                                      roomId: '',
+                                      isVoice: false,
+                                      callerId: userId,
+                                      calleeId: widget.friendData['id'],
+                                      hangupPerson: true,
+                                    ),
+                                  ),
+                                );
+                              } else {
+                                debugPrint('Token is not available');
+                              }
+                            },
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
               );
             },
           ),
