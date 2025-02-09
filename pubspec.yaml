@@ -65,6 +65,7 @@ dependencies:
   googleapis_auth:
   flutter_webrtc:
   emoji_picker_flutter:
+  device_info_plus:
 
 dev_dependencies:
   flutter_test:

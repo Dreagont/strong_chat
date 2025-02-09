@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
@@ -314,16 +315,22 @@ class _MessageBoxWithDataState extends State<MessageBoxWithData> {
           },
           child: Row(
             children: [
-              Icon(Icons.insert_drive_file, color: Colors.white),
+              Icon(Icons.insert_drive_file, color: widget.themeProvider.themeMode == ThemeMode.dark
+              ? isMyMess ? Colors.white : Colors.white
+                  : isMyMess ? Colors.white : Colors.black),
               SizedBox(width: 8),
               Expanded(
                 child: Text(
                   _formatFileName(widget.data['fileName'], 26) ?? '',
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: widget.themeProvider.themeMode == ThemeMode.dark
+                      ? isMyMess ? Colors.white : Colors.white
+                      : isMyMess ? Colors.white : Colors.black),
                 ),
               ),
               IconButton(
-                icon: Icon(Icons.download, color: Colors.white),
+                icon: Icon(Icons.download, color: widget.themeProvider.themeMode == ThemeMode.dark
+                    ? isMyMess ? Colors.white : Colors.white
+                    : isMyMess ? Colors.white : Colors.black),
                 onPressed: () {
                   _confirmDownload(context, widget.data['message'], widget.data['fileName']);
                 },
@@ -590,9 +597,15 @@ class _MessageBoxWithDataState extends State<MessageBoxWithData> {
         var response = await http.get(Uri.parse(fileUrl));
         if (response.statusCode == 200) {
           Directory? directory;
-
-          if (await Permission.storage.request().isGranted) {
             if (Platform.isAndroid) {
+              if (int.parse(await DeviceInfoPlugin().androidInfo.then((value) => value.version.release)) < 13) {
+                if (!await Permission.storage.request().isGranted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Storage permission is required')),
+                  );
+                  return;
+                }
+              }
               directory = await getExternalStorageDirectory();
               String newPath = "";
               List<String> paths = directory!.path.split("/");
@@ -614,14 +627,18 @@ class _MessageBoxWithDataState extends State<MessageBoxWithData> {
             await file.writeAsBytes(response.bodyBytes);
 
             print("File downloaded to ${file.path}");
-          } else {
-            print("Permission denied");
-          }
+
         } else {
           print("Failed to download file");
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to download file')),
+          );
         }
       } catch (e) {
         print("Error downloading file: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to download file'"Error downloading file: $e")),
+        );
       }
     }
   }

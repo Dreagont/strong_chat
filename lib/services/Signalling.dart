@@ -347,7 +347,7 @@ class Signaling {
 
       if (state == RTCPeerConnectionState.RTCPeerConnectionStateClosed ||
           state == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected) {
-        hangUp(localRenderer, callerId, calleeId, true, context, false, '', 'disconnected', hangupPerson);
+        //hangUp(localRenderer, callerId, calleeId, true, context, false, '', 'disconnected', hangupPerson);
       }
     };
 

@@ -1,3 +1,4 @@
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -70,7 +71,15 @@ class MyQRCodePage extends StatelessWidget {
         final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
         final Uint8List pngBytes = byteData!.buffer.asUint8List();
 
-        if (await Permission.storage.request().isGranted) {
+        if (int.parse(await DeviceInfoPlugin().androidInfo.then((value) => value.version.release)) < 13) {
+          if (!await Permission.storage.request().isGranted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Storage permission is required')),
+            );
+            return;
+          }
+        }
+
           final directory = Directory('/storage/emulated/0/Pictures/StrongChat');
           if (!await directory.exists()) {
             await directory.create(recursive: true);
@@ -89,9 +98,7 @@ class MyQRCodePage extends StatelessWidget {
               const SnackBar(content: Text('Failed to save QR Code to gallery')),
             );
           }
-        } else {
-          print('Storage permission is required');
-        }
+
       }
     } catch (e) {
       print("Error saving QR Code: $e");

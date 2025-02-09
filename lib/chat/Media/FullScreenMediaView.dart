@@ -1,3 +1,4 @@
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:http/http.dart' as http;
@@ -110,8 +111,15 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
         print("Error handling file download for web: $e");
       }
     } else {
-      if (await Permission.storage.request().isGranted) {
         try {
+          if (int.parse(await DeviceInfoPlugin().androidInfo.then((value) => value.version.release)) < 13) {
+            if (!await Permission.storage.request().isGranted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Storage permission is required')),
+              );
+              return;
+            }
+          }
           final response = await http.get(Uri.parse(mediaItem.url));
           final bytes = response.bodyBytes;
 
@@ -145,11 +153,6 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
             SnackBar(content: Text('Failed to download ${mediaItem.isVideo ? 'video' : 'image'}')),
           );
         }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Storage permission is required')),
-        );
-      }
     }
   }
 
