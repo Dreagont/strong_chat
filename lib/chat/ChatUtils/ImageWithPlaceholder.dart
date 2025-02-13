@@ -92,10 +92,7 @@ class _ImageWithPlaceholderState extends State<ImageWithPlaceholder> {
           if (_isLoaded) {
             double aspectRatio = _width! / _height!;
             double targetHeight = constraints.maxWidth / aspectRatio;
-
-            // Ensure the height doesn't exceed constraints
             targetHeight = targetHeight.clamp(0.0, constraints.maxHeight);
-
             return SizedBox(
               width: constraints.maxWidth,
               height: targetHeight,

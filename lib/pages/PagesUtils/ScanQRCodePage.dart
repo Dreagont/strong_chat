@@ -105,7 +105,6 @@ class _ScanQRCodePageState extends State<ScanQRCodePage> {
     if (result != null) {
       Uint8List fileBytes = result.files.first.bytes!;
       print('Picked file: ${result.files.first.name}');
-      // Process the picked file to scan the QR code.
     }
   }
 

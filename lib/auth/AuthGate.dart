@@ -10,13 +10,26 @@ class AuthGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    List<String> exemptEmails = [
+      'huynhannguyen222@gmail.com',
+      'huong@gmail.com',
+      'mvm@gmail.com'
+    ];
+
     return Scaffold(
       body: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
           if (snapshot.hasData && snapshot.data != null) {
-            LocalNotificationService().uploadFcmToken();
-            return HomeScreen(id: snapshot.data!.uid);
+            String userEmail = snapshot.data!.email ?? '';
+
+            if (snapshot.data!.emailVerified || exemptEmails.contains(userEmail)) {
+              LocalNotificationService().uploadFcmToken('in authgate');
+              return HomeScreen(id: snapshot.data!.uid);
+            } else {
+              FirebaseAuth.instance.signOut();
+              return LoginPage();
+            }
           } else {
             return LoginPage();
           }

@@ -133,8 +133,9 @@ class LocalNotificationService {
     }
   }
 
-  Future<void> uploadFcmToken() async {
+  Future<void> uploadFcmToken(String inw) async {
     try {
+      print(inw);
       String? token;
       if (kIsWeb) {
         token = await FirebaseMessaging.instance.getToken(

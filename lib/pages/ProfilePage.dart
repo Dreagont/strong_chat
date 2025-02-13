@@ -328,8 +328,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 child: Container(
                   color: themeProvider.themeMode == ThemeMode.dark
                       ? Colors.grey[850]
-                      : Colors.white, // Slightly lighter black background
-                  width: double.infinity, // Full width
+                      : Colors.white,
+                  width: double.infinity,
                   padding: const EdgeInsets.all(16.0),
                   child: Row(
                     children: [
@@ -374,7 +374,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 color: themeProvider.themeMode == ThemeMode.dark
                     ? Colors.grey[850]
                     : Colors.white,
-                width: double.infinity, // Full width
+                width: double.infinity,
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                     children: [

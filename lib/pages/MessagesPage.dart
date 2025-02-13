@@ -32,18 +32,15 @@ class _MessagesPageState extends State<MessagesPage> {
         if (friend['isHide'] != true) {
           final oldData = _friendsMap[friend['id']];
           if (oldData != null && oldData['lastMessTime'] != friend['lastMessTime']) {
-            // Only update the specific chat that changed
             setState(() {
               _friendsMap[friend['id']] = friend;
             });
           } else if (oldData == null) {
-            // New chat added
             setState(() {
               _friendsMap[friend['id']] = friend;
             });
           }
         } else if (_friendsMap.containsKey(friend['id'])) {
-          // Remove hidden chat
           setState(() {
             _friendsMap.remove(friend['id']);
           });
@@ -113,26 +110,7 @@ class _MessagesPageState extends State<MessagesPage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Text("No Chat Found"),
-          const SizedBox(height: 30),
-          Text(
-            'Easy to find and chat with your friends',
-            style: TextStyle(fontSize: 14, color: Colors.grey),
-          ),
           const SizedBox(height: 15),
-          ElevatedButton(
-            style: ButtonStyle(
-              backgroundColor: MaterialStateProperty.all<Color>(Colors.blueAccent),
-            ),
-            onPressed: () {},
-            child: const Text(
-              'Add more friend',
-              style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.normal,
-                  color: Colors.white
-              ),
-            ),
-          )
         ],
       ),
     );

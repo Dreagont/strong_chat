@@ -116,7 +116,6 @@ class _MessageBoxWithDataState extends State<MessageBoxWithData> {
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                // Message content
                 GestureDetector(
                   onLongPress: !isWeb ? () => showOptionsMenu(context) : null,
                   child: Container(
@@ -175,7 +174,6 @@ class _MessageBoxWithDataState extends State<MessageBoxWithData> {
                       ),
                     ),
                   ),
-                // Likes indicator
                 if (hasLikes)
                   Positioned(
                     bottom: -5,

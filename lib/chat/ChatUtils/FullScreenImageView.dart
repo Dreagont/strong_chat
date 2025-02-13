@@ -21,7 +21,6 @@ class FullScreenImageView extends StatelessWidget {
           IconButton(
             icon: Icon(Icons.download),
             onPressed: () {
-              // Add download functionality here
             },
           ),
         ],

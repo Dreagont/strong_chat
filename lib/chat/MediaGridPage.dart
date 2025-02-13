@@ -75,7 +75,6 @@ class MediaGridPage extends StatelessWidget {
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          // Media content
                           item.isVideo
                               ? VideoPlayerWidget(
                             videoUrl: item.url,
@@ -86,7 +85,6 @@ class MediaGridPage extends StatelessWidget {
                             mediaUrls: mediaItems,
                           ),
 
-                          // Filename overlay
                           Positioned(
                             bottom: 0,
                             left: 0,

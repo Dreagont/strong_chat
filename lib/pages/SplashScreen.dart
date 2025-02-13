@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:strong_chat/auth/AuthGate.dart'; // Import AuthGate
+import 'package:strong_chat/auth/AuthGate.dart';
 
 class SplashScreen extends StatefulWidget {
   @override
@@ -14,10 +14,10 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   void _navigateToHome() async {
-    await Future.delayed(Duration(seconds: 3)); // Wait for 3 seconds
+    await Future.delayed(Duration(seconds: 3));
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (context) => AuthGate(), // Navigate to AuthGate after the delay
+        builder: (context) => AuthGate(),
       ),
     );
   }
@@ -25,13 +25,13 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // Set the background color to white
+      backgroundColor: Colors.white,
       body: Center(
         child: CircleAvatar(
           radius: 100,
           backgroundImage: AssetImage(
               'assets/logo.jpg') as ImageProvider,
-        ), // Display the image from assets
+        ),
       ),
     );
   }

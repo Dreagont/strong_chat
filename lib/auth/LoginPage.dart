@@ -34,19 +34,18 @@ class _LoginPageState extends State<LoginPage> {
     );
 
     try {
-      final user = await _authService.loginUserWithEmailAndPassword(email, password);
-      Navigator.pop(context); // Close loading dialog
+      final user = await _authService.loginUserWithEmailAndPassword(email, password,context);
+      Navigator.pop(context);
 
       if (user != null) {
-        LocalNotificationService().uploadFcmToken();
+        LocalNotificationService().uploadFcmToken('in login');
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => HomeScreen(id: user.uid)),
         );
       }
     } on FirebaseAuthException catch (e) {
-      Navigator.pop(context); // Close loading dialog
-
+      Navigator.pop(context);
       String errorMessage;
       switch (e.code) {
         case 'user-not-found':

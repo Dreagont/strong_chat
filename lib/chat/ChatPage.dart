@@ -461,7 +461,6 @@ class _ChatPageState extends State<ChatPage> {
                       final bool blockedByThem = blockedByThemSnapshot.data ?? false;
                       final bool iBlockedThem = iBlockedThemSnapshot.data ?? false;
 
-                      // Disable buttons if either user has blocked the other
                       final bool callsDisabled = blockedByThem || iBlockedThem;
 
                       return Row(

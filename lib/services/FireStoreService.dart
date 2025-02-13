@@ -8,7 +8,7 @@ import 'notification_service.dart';
 class FireStoreService {
   final FirebaseFirestore fireStore = FirebaseFirestore.instance;
   final AuthService authService = AuthService();
-  final Set<String> activeListeners = {}; // Track active listeners
+  final Set<String> activeListeners = {};
 
 
   void listenForNewMessages(String userId) {
@@ -79,7 +79,6 @@ class FireStoreService {
     return 'Unknown';
   }
 
-  // Helper method to get sender's name
   Future<String> getSenderName(String senderId) async {
     final userDoc = await fireStore.collection("Users").doc(senderId).get();
     if (userDoc.exists) {

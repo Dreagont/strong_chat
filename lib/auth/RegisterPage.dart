@@ -185,6 +185,7 @@ class _RegisterPageState extends State<RegisterPage> {
             controller: _nameController,
             hintText: 'Name',
             icon: Icons.person,
+            maxLength: 30
           ),
           SizedBox(height: 10),
           _buildTextField(
@@ -192,6 +193,7 @@ class _RegisterPageState extends State<RegisterPage> {
             hintText: 'Email',
             icon: Icons.email,
             keyboardType: TextInputType.emailAddress,
+            maxLength: 30
           ),
           SizedBox(height: 10),
           _buildTextField(
@@ -302,6 +304,7 @@ class _RegisterPageState extends State<RegisterPage> {
               controller: _nameController,
               hintText: 'Name',
               icon: Icons.person,
+              maxLength: 30
             ),
             SizedBox(height: 10),
             _buildTextField(
@@ -309,6 +312,7 @@ class _RegisterPageState extends State<RegisterPage> {
               hintText: 'Email',
               icon: Icons.email,
               keyboardType: TextInputType.emailAddress,
+              maxLength: 30
             ),
             SizedBox(height: 10),
             _buildTextField(

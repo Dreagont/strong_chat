@@ -20,7 +20,7 @@ class InputBox extends StatelessWidget {
         controller: controller,
         focusNode: focusNode,
         decoration: InputDecoration(
-          border: InputBorder.none, // Remove border
+          border: InputBorder.none,
           hintText: hint,
         ),
       ),

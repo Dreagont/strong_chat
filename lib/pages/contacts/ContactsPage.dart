@@ -20,7 +20,12 @@ class _ContactsPageState extends State<ContactsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     return Scaffold(
+      backgroundColor: themeProvider.themeMode == ThemeMode.dark
+          ? Colors.black
+          : Colors.grey[200],
       body: Column(
         children: [
           buildRequestsButton(context),
@@ -87,8 +92,6 @@ class _ContactsPageState extends State<ContactsPage> {
   }
 
   Widget buildFriendsList(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-
     return StreamBuilder<List<Map<String, dynamic>>>(
       stream: friendService.getFriendsStream(authService.getCurrentUserId()),
       builder: (context, snapshot) {

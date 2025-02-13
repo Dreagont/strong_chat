@@ -60,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
-    _focusNode.dispose(); // Dispose the FocusNode when the widget is disposed
+    _focusNode.dispose();
     super.dispose();
   }
 

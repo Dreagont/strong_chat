@@ -47,10 +47,8 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   }
 
   void _toggleFullscreen() async {
-    // Store the playing state before going fullscreen
     wasPlayingBeforeFullscreen = _controller.value.isPlaying;
 
-    // Pause the current video before going fullscreen
     if (_controller.value.isPlaying) {
       _controller.pause();
     }
@@ -68,7 +66,6 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
       ),
     );
 
-    // Only resume playing if it was playing before going fullscreen and hasn't reached the end
     if (wasPlayingBeforeFullscreen && _controller.value.position < _controller.value.duration) {
       _controller.play();
     }

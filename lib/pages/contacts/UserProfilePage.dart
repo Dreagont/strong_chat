@@ -210,7 +210,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      _buildAvatarStack(), // Use the new avatar stack widget
+                      _buildAvatarStack(),
                       const SizedBox(width: 10),
                       if (_isEditingName && widget.isCurrentUser)
                         SizedBox(

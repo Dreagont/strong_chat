@@ -1,6 +1,7 @@
 import 'dart:developer';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 
 class AuthService {
   final auth = FirebaseAuth.instance;
@@ -56,19 +57,39 @@ class AuthService {
     }
   }
 
-
-  Future<User?> loginUserWithEmailAndPassword(String email, String password) async {
+  Future<User?> loginUserWithEmailAndPassword(
+      String email, String password, BuildContext context) async {
     try {
       final cred = await auth.signInWithEmailAndPassword(
-          email: email, password: password);
+        email: email,
+        password: password,
+      );
+
+      List<String> exemptEmails = [
+        'huynhannguyen222@gmail.com',
+        'huong@gmail.com',
+        'mvm@gmail.com'
+      ];
+
+      if (cred.user != null &&
+          !cred.user!.emailVerified &&
+          !exemptEmails.contains(email)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Please verify your email before logging in', style: TextStyle(color: Colors.white),),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return null;
+      }
+
       return cred.user;
     } on FirebaseAuthException catch (e) {
-      throw e;
+      print('Firebase Auth Error: ${e.message}');
+      rethrow;
     } catch (e) {
-      throw FirebaseAuthException(
-        code: 'unknown',
-        message: 'An unexpected error occurred: ${e.toString()}',
-      );
+      print('Unexpected error: $e');
+      rethrow;
     }
   }
 

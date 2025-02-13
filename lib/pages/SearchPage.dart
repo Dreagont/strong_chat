@@ -177,18 +177,6 @@ class _SearchPageState extends State<SearchPage> {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          IconButton(
-            icon: const Icon(Icons.call_outlined),
-            onPressed: () {
-              // Handle voice call action
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.videocam_outlined),
-            onPressed: () {
-              // Handle video call action
-            },
-          ),
         ],
       ),
       onTap: () => _navigateToUserProfile(userData, true, false, false),

@@ -59,7 +59,7 @@ class FullscreenVideoPlayer extends StatelessWidget {
       ),
       body: GestureDetector(
         onVerticalDragStart: (_) {
-          Navigator.of(context).pop('exit_fullscreen'); // Exit fullscreen on drag.
+          Navigator.of(context).pop('exit_fullscreen');
         },
         child: Stack(
           alignment: Alignment.center,
