@@ -179,23 +179,41 @@ class _MessageBoxWithDataState extends State<MessageBoxWithData> {
                     bottom: -5,
                     left: isMyMess ? 10 : null,
                     right: isMyMess ? null : 10,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Container(
-                          width: 18,
-                          height: 18,
-                          decoration: BoxDecoration(
-                            color: Colors.white38,
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        Icon(
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: widget.themeProvider.themeMode == ThemeMode.dark
+                            ? Colors.grey[700]
+                            : Colors.white38,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: likes.length == 1
+                          ? Center(
+                        child: Icon(
                           Icons.favorite,
                           color: Colors.red,
                           size: 14,
                         ),
-                      ],
+                      )
+                          : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.favorite,
+                            color: Colors.red,
+                            size: 14,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            ' ${likes.length}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
               ],
@@ -510,14 +528,6 @@ class _MessageBoxWithDataState extends State<MessageBoxWithData> {
                   Clipboard.setData(ClipboardData(text: widget.data["message"] ?? ''));
                 },
               ),
-            ListTile(
-              leading: Icon(Icons.check),
-              title: Text("Check"),
-              onTap: () {
-                Navigator.pop(context);
-                print("data : $widget.data");
-              },
-            )
           ],
         );
       },
