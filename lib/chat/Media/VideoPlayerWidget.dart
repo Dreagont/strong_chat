@@ -77,54 +77,60 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return _controller.value.isInitialized
-        ? Stack(
-      alignment: Alignment.center,
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: AspectRatio(
-            aspectRatio: _controller.value.aspectRatio,
-            child: VideoPlayer(_controller),
-          ),
-        ),
-        Positioned(
-          bottom: 10,
-          left: 10,
-          child: GestureDetector(
-            onTap: () {
-              setState(() {
-                if (_controller.value.isPlaying) {
-                  _controller.pause();
-                } else {
-                  VideoPlayerControllerManager.setActiveController(_controller);
-                  _controller.play();
-                }
-              });
-            },
-            child: Icon(
-              _controller.value.isPlaying
-                  ? Icons.pause_circle_outline
-                  : Icons.play_circle_outline,
-              size: 40,
-              color: Colors.white,
+    return Container(
+      constraints: BoxConstraints(
+        minWidth: 110, // Set your desired minimum width
+      ),
+      child: _controller.value.isInitialized
+          ? Stack(
+        alignment: Alignment.center,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: AspectRatio(
+              aspectRatio: _controller.value.aspectRatio,
+              child: VideoPlayer(_controller),
             ),
           ),
-        ),
-        Positioned(
-          bottom: 10,
-          right: 10,
-          child: GestureDetector(
-            onTap: _toggleFullscreen,
-            child: Icon(
-              Icons.fullscreen,
-              size: 40,
-              color: Colors.white,
+          Positioned(
+            bottom: 10,
+            left: 10,
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  if (_controller.value.isPlaying) {
+                    _controller.pause();
+                  } else {
+                    VideoPlayerControllerManager.setActiveController(_controller);
+                    _controller.play();
+                  }
+                });
+              },
+              child: Icon(
+                _controller.value.isPlaying
+                    ? Icons.pause_circle_outline
+                    : Icons.play_circle_outline,
+                size: 40,
+                color: Colors.white,
+              ),
             ),
           ),
-        ),
-      ],
-    )
-        : Center(child: CircularProgressIndicator());
+          Positioned(
+            bottom: 10,
+            right: 10,
+            child: GestureDetector(
+              onTap: _toggleFullscreen,
+              child: Icon(
+                Icons.fullscreen,
+                size: 40,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      )
+          : Center(child: CircularProgressIndicator()),
+    );
   }
+
 }

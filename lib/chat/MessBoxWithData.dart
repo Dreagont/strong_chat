@@ -255,7 +255,7 @@ class _MessageBoxWithDataState extends State<MessageBoxWithData> {
                   style: TextStyle(
                     color: widget.themeProvider.themeMode == ThemeMode.dark
                         ? Colors.white
-                        : Colors.black,
+                        : Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
